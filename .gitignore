@@ -1,2 +1,4 @@
-data
-debug
+data/*
+debug/*
+.venv/*
+**/.DS_Store
