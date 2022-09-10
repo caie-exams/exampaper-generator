@@ -15,27 +15,24 @@ from longest_increasing_subsequence import longest_increasing_subsequence
 
 class PdfScanner:
     def __init__(self, path):
+        # init basic vars
         self.path = path
         self.pdf_object = open(path, "rb")
         self.pdf_reader = PyPDF2.PdfReader(self.pdf_object)
         self.question_list = []
 
+        # init analysic vas
+        self.total_page_cnt = self.pdf_reader.numPages
+
     def process(self):
         print("loading settings")
         # self.load_settings()
-        print("start analyse!")
-        self.analyse()
         print("start prepare!")
         self.prepare()
         print("start locate!")
         self.locate()
         print("start split!")
         self.split_mcq()
-
-    # get basic information from pdf and config file
-    def analyse(self):
-        self.total_page_cnt = self.pdf_reader.numPages
-        pass
 
     # split pdf into pages of raw_ocr_texts
     # for ocr texts, format is
@@ -172,9 +169,6 @@ class PdfScanner:
             self.__add_question(int(item[11]), [{"page_num": item[1], "left": item[6],
                                 "right": 1550, "top": item[7], "bottom": bottom_coord}], text)
 
-    def __compare(self):
-        pass
-
     def debug(self):
 
         for idx, image in enumerate(self.images):
@@ -226,3 +220,14 @@ file2.write(raw_ocr_data)
 file2.close()
 print("start debug!")
 pdfScanner.debug()
+
+# must dos
+# - add config to support more types other than mcq
+# - add support to mark schemes
+# - fix the last mcq adds the bottom page info
+
+# major improvements
+# - use fuzzy search to make the text more accurate
+
+# minor improvements
+# - reconstruct the code to use multithreading to speed up the process
