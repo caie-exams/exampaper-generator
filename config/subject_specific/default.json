@@ -1,0 +1,26 @@
+{
+  "page_settings": {
+    "content_area": {
+      "left": {
+        "defualt": {
+          "defualt": 175
+        }
+      },
+      "right": {
+        "default": {
+          "defualt": 1550
+        }
+      },
+      "top": {
+        "defualt": {
+          "defualt": 150
+        }
+      },
+      "bottom": {
+        "defualt": {
+          "defualt": 2200
+        }
+      }
+    }
+  }
+}

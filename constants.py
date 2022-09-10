@@ -1,8 +1,7 @@
 import configparser
-from os.path import exists
-from os import getcwd
+import os
 
-ROOT_DIR_PATH = getcwd() + "/"
+ROOT_DIR_PATH = os.getcwd() + "/"
 DATA_DIR_PATH = ROOT_DIR_PATH + "data/"
 CONFIG_DIR_PATH = ROOT_DIR_PATH + "config/"
 DEBUG_DIR_PATH = ROOT_DIR_PATH + "debug/"
@@ -10,7 +9,7 @@ DEBUG_DIR_PATH = ROOT_DIR_PATH + "debug/"
 GLOBAL_CONFIG_FILE_PATH = CONFIG_DIR_PATH + "config.ini"
 GLOBAL_CONFIG = configparser.ConfigParser()
 
-if not exists(GLOBAL_CONFIG_FILE_PATH):
+if not os.path.exists(GLOBAL_CONFIG_FILE_PATH):
 
     # default config begins here
 

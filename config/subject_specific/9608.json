@@ -1,34 +1,5 @@
 {
   "meta_info": {
     "subject_name": "computer science"
-  },
-  "page_settings": {
-    "content_area": {
-        "left": {
-          "qp": {
-            "1":175
-          }
-        },
-        "right": {
-          "qp": {
-            "1":1550
-          }
-        },
-        "top": {
-          "qp": {
-            "1":150
-          }
-        },
-        "bottom": {
-          "qp": {
-            "1":2200
-          }
-        }
-      }
-    },
-    "non_standard_page_template":[
-      
-    ]
-
   }
 }
