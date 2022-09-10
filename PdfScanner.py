@@ -1,6 +1,8 @@
 # PdfScanner
 # Input the path of PDF file, output
 
+from constants import *
+
 import PyPDF2
 import cv2
 import pytesseract
@@ -8,19 +10,6 @@ import numpy as np
 from pdf2image import convert_from_path
 import json
 from longest_increasing_subsequence import longest_increasing_subsequence
-
-
-# class question:
-#     def __init__(self, pdfname = None, page = None, question_num = None, coordinates = None, text = None ):
-#         self.pdfname = pdfnamev
-#         self.page = page
-#         self.question_num = question_num
-#         self.coordinates = coordinates
-#         self.text = text
-
-
-# def save_question(pdfname, page, question_num, coordinates, text):
-#     pass
 
 
 class PdfScanner:
@@ -76,6 +65,14 @@ class PdfScanner:
     def __ocr_data_in_range(self, data, left, right, top,  bottom):
         limited_data = []
         for item in data:
+            if type(item) != list:
+                print(item)
+                print(limited_data)
+                dumped = json.dumps(limited_data)
+                with open(DEBUG_DIR_PATH + "debug.json", "w") as debugf:
+                    debugf.write(dumped)
+                input()
+                continue
             if (left == -1 or item[6] >= left) \
                     and (right == -1 or (item[6] + item[8]) <= right) \
                 and (top == -1 or item[7] >= top) \
@@ -157,6 +154,11 @@ class PdfScanner:
 
     def debug(self):
 
+        # for idx, image in enumerate(self.images):
+        #     print(idx)
+        #     self.__ocr_data_in_range(self.__ocr_data_on_page(
+        #         self.raw_ocr_data, idx), 0, 175, 0, 2200)
+
         for idx, image in enumerate(self.images):
 
             # print line
@@ -170,7 +172,7 @@ class PdfScanner:
                              (1550, image.shape[0]), (0, 100, 0), 2)
 
             # print boxes
-            for item in self.__ocr_data_in_range(self.raw_ocr_data[idx], 0, 175, 0, 2200):
+            for item in self.__ocr_data_in_range(self.__ocr_data_on_page(self.raw_ocr_data, idx), 0, 175, 0, 2200):
                 # for line in enumerate(self.test_list):
                 if item[1] == idx:
                     image = cv2.rectangle(
@@ -183,16 +185,18 @@ class PdfScanner:
                 image = cv2.putText(
                     image, "BLANK PAGE DETECTED", (int(image.shape[1]/2), int(image.shape[0]/2)), cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
 
-            cv2.imwrite("./debug/image" + str(idx) + ".png", image)
+            cv2.imwrite(DEBUG_DIR_PATH + "image" + str(idx) + ".png", image)
 
     def __del__(self):
         self.pdf_object.close()
 
 
-pdfScanner = PdfScanner("pdf/0620_s20_qp_11.pdf")
+print(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
+pdfScanner = PdfScanner(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
 pdfScanner.process()
 raw_ocr_data = json.dumps(pdfScanner.raw_ocr_data)
-file2 = open("raw_ocr_data.json", "w")
+file2 = open(DEBUG_DIR_PATH + "raw_ocr_data.json", "w")
 file2.write(raw_ocr_data)
 file2.close()
+print("start debug!")
 pdfScanner.debug()
