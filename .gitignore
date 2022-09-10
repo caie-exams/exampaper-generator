@@ -1,4 +1,4 @@
-data/*
-debug/*
-.venv/*
-**/.DS_Store
+data/
+debug/
+.venv/
+.DS_Store
