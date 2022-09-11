@@ -1,9 +1,5 @@
-# PdfScanner
-# Input the path of PDF file, output
-
 from constants import *
 
-import PyPDF2
 import cv2
 import pytesseract
 import numpy as np
@@ -11,28 +7,43 @@ from pdf2image import convert_from_path
 import json
 from os.path import basename, splitext
 from longest_increasing_subsequence import longest_increasing_subsequence
+from jsonmerge import merge
+
+# takes a pdf and output a list of questions with basically raw data
+# after some tidy up this could be a parent class
 
 
-class PdfScanner:
+class Analyser:
     def __init__(self, path):
-        # init basic vars
         self.path = path
-        self.pdf_object = open(path, "rb")
-        self.pdf_reader = PyPDF2.PdfReader(self.pdf_object)
-        self.question_list = []
+        self.pdf_name = splitext(basename(self.path))[0]
 
-        # init analysic vas
-        self.total_page_cnt = self.pdf_reader.numPages
+        # load settings
+        self.settings = self.load_settings()
+        pytesseract.__loader__
 
     def process(self):
-        print("loading settings")
-        # self.load_settings()
         print("start prepare!")
-        self.prepare()
+        images, raw_ocr_data, total_page_cnt = self.prepare()
         print("start locate!")
-        self.locate()
+        longest_sequence = self.locate(raw_ocr_data, total_page_cnt)
         print("start split!")
-        self.split_mcq()
+        question_list = self.split(raw_ocr_data, longest_sequence)
+        return question_list
+
+    def load_settings(self):
+        self.subject_num = self.pdf_name.split('_')[0]
+        try:
+            with open(SUBJECT_SETTINGS + self.subject_num + ".json", "r") as subject_json:
+                subject_specifc_settings = json.loads(subject_json.read())
+        except IOError as e:
+            print("warning: " + self.subject_num + ".json" + " not found.")
+
+        with open(SUBJECT_SETTINGS + DEFAULT_FILE, "r") as defualt_json:
+            default_settings = json.loads(defualt_json.read())
+
+        settings = merge(default_settings, subject_specifc_settings)
+        print(settings)
 
     # split pdf into pages of raw_ocr_texts
     # for ocr texts, format is
@@ -41,10 +52,9 @@ class PdfScanner:
 
     def prepare(self):
         # scan to get rough ocr text
-        self.images = convert_from_path(self.path)
-        self.raw_ocr_data = []
-        self.chunk_ocr_data = []
-        for idx, image in enumerate(self.images):
+        images = convert_from_path(self.path)
+        raw_ocr_data = []
+        for idx, image in enumerate(images):
             print("preparing page:", idx)
             pytesseract
             raw_data = pytesseract.image_to_data(image)
@@ -53,19 +63,19 @@ class PdfScanner:
                 item_data[:10] = map(int, item_data[:10])
                 item_data[10] = float(item_data[10])
                 item_data[1] = idx
-                self.raw_ocr_data.append(item_data)
+                raw_ocr_data.append(item_data)
+
+        total_page_cnt = len(images)
 
         def pil2cv2(img):
             return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-        self.images = map(pil2cv2, self.images)
+        images = map(pil2cv2, images)
 
-        # extract precise text from doc
-        # self.extracted_text = []
-        # for page in self.pdfReader.pages:
-        #     self.extracted_text.append(page.extractText())
+        return [images, raw_ocr_data, total_page_cnt]
 
     # return ocr data in the area
+
     def __ocr_data_in_range(self, data, left, right, top,  bottom):
         limited_data = []
         for item in data:
@@ -94,13 +104,13 @@ class PdfScanner:
         return False
 
     # locate question numbers to coordinates on each page
-    def locate(self):
+    def locate(self, raw_ocr_data, total_page_cnt):
 
         # find the longest sequence of questions
         question_numbers = []
 
-        for page_idx in range(0, self.total_page_cnt):
-            page = self.__ocr_data_on_page(self.raw_ocr_data, page_idx)
+        for page_idx in range(0, total_page_cnt):
+            page = self.__ocr_data_on_page(raw_ocr_data, page_idx)
             num_area = self.__ocr_data_in_range(page, 0, 175, 150, 2200)
             for match in num_area:
                 if match[11] != '-1' and match[11] != "":
@@ -108,15 +118,16 @@ class PdfScanner:
                     if match[11] != "" and int(match[11]) > 0:
                         question_numbers.append(match)
 
-        self.longest_sequence = longest_increasing_subsequence(
+        longest_sequence = longest_increasing_subsequence(
             question_numbers, False, lambda x: int(x[11]))
+        return longest_sequence
 
     # merge text in data
 
     def __merge_text(self, data):
         text = ""
         for word in data:
-            text += word[11].lower() + " "
+            text += word[11] + " "
         return text
 
     # obtain the most bottom character's bottom coords
@@ -136,98 +147,85 @@ class PdfScanner:
     #       top         int
     #       bottom      int
     # text              string
-    def __add_question(self, question_number,  location, text):
-        new_question = {"pdfname": splitext(basename(self.path))[
-            0], "question_num": question_number, "location": location, "text": text}
-        self.question_list.append(new_question)
+    def __make_question(self,  question_number,  location, text):
+        return {"pdfname": self.pdf_name,
+                "question_num": question_number, "location": location, "text": text}
 
     # split quesitons to each box
-    def split_mcq(self):
-        for idx, item in enumerate(self.longest_sequence):
+    def split(self, raw_ocr_data, longest_sequence):
+        question_list = []
+
+        for idx, item in enumerate(longest_sequence):
 
             data_on_page = self.__ocr_data_in_range(
-                self.__ocr_data_on_page(self.raw_ocr_data, item[1]), 175, 1550, 150, 2200)
+                self.__ocr_data_on_page(raw_ocr_data, item[1]), 175, 1550, 150, 2200)
             bottom_coord = -1
             data_in_question = []
-            if idx == len(self.longest_sequence) - 1 \
-                    or self.longest_sequence[idx+1][1] != item[1]:
+            if idx == len(longest_sequence) - 1 \
+                    or longest_sequence[idx+1][1] != item[1]:
                 # last question of all or last question on page,
                 # get all data up to the bottom of the most bottom word
                 print(item[11])
                 bottom_coord = self.__last_character_bottom_cords(data_on_page)
-            elif int(self.longest_sequence[idx + 1][11]) != int(item[11]) + 1:
+            elif int(longest_sequence[idx + 1][11]) != int(item[11]) + 1:
                 # there's a gap, skips this question
                 continue
             else:
                 # this question's bottom coord = next questions's top cord
-                bottom_coord = self.longest_sequence[idx + 1][7]
+                bottom_coord = longest_sequence[idx + 1][7]
 
             data_in_question = self.__ocr_data_in_range(
                 data_on_page, item[6], 1550, item[7], bottom_coord)
 
             text = self.__merge_text(data_in_question)
-            self.__add_question(int(item[11]), [{"page_num": item[1], "left": item[6],
-                                "right": 1550, "top": item[7], "bottom": bottom_coord}], text)
+            question_list.append(self.__make_question(int(item[11]),
+                                                      [{"page_num": item[1], "left": 175, "right": 1550,
+                                                        "top": item[7], "bottom": bottom_coord}], text))
 
-    def debug(self):
+        return question_list
 
-        for idx, image in enumerate(self.images):
+# def debug(self, images, extracted_data, question_list):
 
-            # print line
-            image = cv2.line(
-                image, (175, 0), (175, image.shape[0]), (0, 100, 0), 2)
-            image = cv2.line(image, (0, 2200),
-                             (image.shape[1], 2200), (0, 100, 0), 2)
-            image = cv2.line(image, (0, 150),
-                             (image.shape[1], 150), (0, 100, 0), 2)
-            image = cv2.line(image, (1550, 0),
-                             (1550, image.shape[0]), (0, 100, 0), 2)
+#     for idx, image in enumerate(images):
 
-            # print boxes
-            # for item in self.__ocr_data_in_range(self.__ocr_data_on_page(self.test_list, idx), 0, -1, 0, -1):
-            #     # for line in enumerate(self.test_list):
-            #     if item[1] == idx:
-            #         image = cv2.rectangle(
-            #             image, (item[6], item[7]), (item[6] + item[8], item[7] + item[9]), (0, 0, 100), 2)
-            #         image = cv2.putText(
-            #             image, item[11], (item[6] + item[8], item[7] + item[9] + 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
-            for item in self.question_list:
-                for question in item["location"]:
+#         new_image = image
 
-                    if question["page_num"] == idx:
-                        image = cv2.rectangle(
-                            image, (question["left"], question["top"]), (question["right"], question["bottom"]), (0, 0, 100), 2)
-                        image = cv2.putText(
-                            image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
+#         # print line
+#         new_image = cv2.line(
+#             new_image, (175, 0), (175, new_image.shape[0]), (0, 100, 0), 2)
+#         new_image = cv2.line(new_image, (0, 2200),
+#                                 (new_image.shape[1], 2200), (0, 100, 0), 2)
+#         new_image = cv2.line(new_image, (0, 150),
+#                                 (new_image.shape[1], 150), (0, 100, 0), 2)
+#         new_image = cv2.line(new_image, (1550, 0),
+#                                 (1550, new_image.shape[0]), (0, 100, 0), 2)
 
-            # test if blank page
-            # if self.__is_blank_page(idx):
-            #     image = cv2.putText(
-            #         image, "BLANK PAGE DETECTED", (int(image.shape[1]/2), int(image.shape[0]/2)), cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
+#         # print questions
+#         for item in question_list:
+#             for question in item["location"]:
 
-            cv2.imwrite(DEBUG_DIR_PATH + "image" + str(idx) + ".png", image)
+#                 if question["page_num"] == idx:
+#                     new_image = cv2.rectangle(
+#                         new_image, (question["left"], question["top"]), (question["right"], question["bottom"]), (0, 0, 100), 2)
+#                     new_image = cv2.putText(
+#                         new_image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
 
-    def __del__(self):
-        self.pdf_object.close()
+#         # write to images
+#         cv2.imwrite(DEBUG_DIR_PATH + "image" +
+#                     str(idx) + ".png", new_image)
+
+#         # write to file
+#         extracted_json = json.dumps(extracted_data)
+#         with open(DEBUG_DIR_PATH + "debug.json", "w") as debugfile:
+#             debugfile.write(extracted_json)
 
 
-print(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
-pdfScanner = PdfScanner(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
-pdfScanner.process()
-raw_ocr_data = json.dumps(pdfScanner.raw_ocr_data)
-file2 = open(DEBUG_DIR_PATH + "raw_ocr_data.json", "w")
-file2.write(raw_ocr_data)
-file2.close()
-print("start debug!")
-pdfScanner.debug()
+# main is used for debug
+def main():
+    print(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
+    pdfScanner = Analyser(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
+    print(pdfScanner.process())
 
-# must dos
-# - add config to support more types other than mcq
-# - add support to mark schemes
-# - fix the last mcq adds the bottom page info
 
-# major improvements
-# - use fuzzy search to make the text more accurate
-
-# minor improvements
-# - reconstruct the code to use multithreading to speed up the process
+if __name__ == "__main__":
+    exit(main())

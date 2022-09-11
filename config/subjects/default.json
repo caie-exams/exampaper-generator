@@ -1,0 +1,36 @@
+{
+  "page_settings": {
+    "content_area": {
+      "left": {
+        "qp": {
+          "default": 175
+        }
+      },
+      "right": {
+        "qp": {
+          "defualt": 1550
+        }
+      },
+      "top": {
+        "qp": {
+          "default": 150
+        }
+      },
+      "bottom": {
+        "qp": {
+          "default": 2200
+        }
+      }
+    },
+    "allow_cross_page": {
+      "qp": {
+        "defualt": true,
+        "1": false
+      },
+      "ms": {
+        "defualt": true,
+        "1": false
+      }
+    }
+  }
+}
