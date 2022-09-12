@@ -1,6 +1,5 @@
 # must dos
 
-- test post processor
 - write code for categoriser
 - add category keywords for testing
 
@@ -12,6 +11,5 @@
 
 # minor improvements
 
-- reconstruct analyser for multithreading
 - add control mechanism and get the codes into src folder
 - add config logging and debugging mechanism
