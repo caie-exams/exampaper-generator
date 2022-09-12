@@ -1,4 +1,5 @@
 from constants import *
+from post_processor import *
 
 import cv2
 import pytesseract
@@ -9,53 +10,64 @@ from os.path import basename, splitext
 from longest_increasing_subsequence import longest_increasing_subsequence
 from jsonmerge import merge
 
-# takes a pdf and output a list of questions with basically raw data
-# after some tidy up this could be a parent class
 
+class Analyser(ProcessorModel):
 
-class Analyser:
-    def __init__(self, path):
-        self.path = path
-        self.pdf_name = splitext(basename(self.path))[0]
+    """
+    takes name of pdf and spit out questions raw data
 
-        # load settings
-        self.settings = self.load_settings()
-        pytesseract.__loader__
+    input - name of pdf  
+    output - individual quesitons  
 
-    def process(self):
-        print("start prepare!")
-        images, raw_ocr_data, total_page_cnt = self.prepare()
-        print("start locate!")
-        longest_sequence = self.locate(raw_ocr_data, total_page_cnt)
-        print("start split!")
-        question_list = self.split(raw_ocr_data, longest_sequence)
+    relation is one-to-many
+    """
+
+    def _process(self, pdfname):
+        pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
+        raw_ocr_data, page_cnt = self._scan(pdfpath)
+        question_list = self._locate(raw_ocr_data, page_cnt, pdfname)
         return question_list
 
-    def load_settings(self):
-        self.subject_num = self.pdf_name.split('_')[0]
-        try:
-            with open(SUBJECT_SETTINGS + self.subject_num + ".json", "r") as subject_json:
-                subject_specifc_settings = json.loads(subject_json.read())
-        except IOError as e:
-            print("warning: " + self.subject_num + ".json" + " not found.")
+    # def load_settings(self):
+    #     self.subject_num = self.pdf_name.split('_')[0]
+    #     try:
+    #         with open(SUBJECT_SETTINGS + self.subject_num + ".json", "r") as subject_json:
+    #             subject_specifc_settings = json.loads(subject_json.read())
+    #     except IOError as e:
+    #         print("warning: " + self.subject_num + ".json" + " not found.")
 
-        with open(SUBJECT_SETTINGS + DEFAULT_FILE, "r") as defualt_json:
-            default_settings = json.loads(defualt_json.read())
+    #     with open(SUBJECT_SETTINGS + DEFAULT_FILE, "r") as defualt_json:
+    #         default_settings = json.loads(defualt_json.read())
 
-        settings = merge(default_settings, subject_specifc_settings)
-        print(settings)
+    #     settings = merge(default_settings, subject_specifc_settings)
+    #     print(settings)
 
-    # split pdf into pages of raw_ocr_texts
-    # for ocr texts, format is
-    # 0     1           2           3       4           5           6       7   8       9       10      11
-    # level page_num    block_num   par_num line_num    word_num    left    top width   height  conf    text
+    def _scan(self, pdfpath):
+        """
+        taking pdf path  
+        returns a raw ocr data and the page count
 
-    def prepare(self):
-        # scan to get rough ocr text
-        images = convert_from_path(self.path)
+        raw ocr data format
+
+        | num     | data        |
+        | ------- | ------      |
+        | 0       | leve        |
+        | 1       | page_num    |
+        | 2       | block_num   |
+        | 3       | par_num     |
+        | 4       | line_num    |
+        | 5       | word_num    |
+        | 6       | left        |
+        | 7       | top         |
+        | 8       | width       |
+        | 9       | height      |
+        | 10      | conf        |
+        | 11      | text        |
+        """
+
+        images = convert_from_path(pdfpath)
         raw_ocr_data = []
         for idx, image in enumerate(images):
-            print("preparing page:", idx)
             pytesseract
             raw_data = pytesseract.image_to_data(image)
             for item in raw_data.splitlines()[1:]:
@@ -65,51 +77,25 @@ class Analyser:
                 item_data[1] = idx
                 raw_ocr_data.append(item_data)
 
-        total_page_cnt = len(images)
+        page_cnt = len(images)
 
         def pil2cv2(img):
             return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
         images = map(pil2cv2, images)
 
-        return [images, raw_ocr_data, total_page_cnt]
+        return [raw_ocr_data, page_cnt]
 
-    # return ocr data in the area
-
-    def __ocr_data_in_range(self, data, left, right, top,  bottom):
-        limited_data = []
-        for item in data:
-            if (left == -1 or item[6] >= left) \
-                    and (right == -1 or (item[6] + item[8]) <= right) \
-                and (top == -1 or item[7] >= top) \
-                    and (bottom == -1 or (item[7] + item[9]) <= bottom):
-                limited_data.append(item)
-        return limited_data
-
-    # form a list of question on given page
-    def __ocr_data_on_page(self, data, pagenum):
-        limited_data = []
-        for item in data:
-            if item[1] == pagenum:
-                limited_data.append(item)
-        return limited_data
-
-    # test if BLANK PAGE is present on the page
-    def __is_blank_page(self, pagenum):
-        data = self.__ocr_data_in_range(
-            self.__ocr_data_on_page(self.raw_ocr_data, pagenum), -1, -1, 160, 220)
-        for item in data:
-            if "BLANK" in item or "PAGE" in item:
-                return True
-        return False
-
-    # locate question numbers to coordinates on each page
-    def locate(self, raw_ocr_data, total_page_cnt):
+    def _locate(self, raw_ocr_data, page_cnt, pdfname):
+        """
+        input raw ocr data 
+        return list of questions
+        """
 
         # find the longest sequence of questions
         question_numbers = []
 
-        for page_idx in range(0, total_page_cnt):
+        for page_idx in range(0, page_cnt):
             page = self.__ocr_data_on_page(raw_ocr_data, page_idx)
             num_area = self.__ocr_data_in_range(page, 0, 175, 150, 2200)
             for match in num_area:
@@ -120,39 +106,9 @@ class Analyser:
 
         longest_sequence = longest_increasing_subsequence(
             question_numbers, False, lambda x: int(x[11]))
-        return longest_sequence
 
-    # merge text in data
+        # split and generate questions
 
-    def __merge_text(self, data):
-        text = ""
-        for word in data:
-            text += word[11] + " "
-        return text
-
-    # obtain the most bottom character's bottom coords
-    def __last_character_bottom_cords(self, data):
-        ans = -1
-        for item in data:
-            ans = max(ans, item[7] + item[9])
-        return ans
-
-    # question format:
-    # pdfname           string
-    # question_num      int
-    # location          list(dict)
-    #       page_num    int
-    #       left        int
-    #       right       int
-    #       top         int
-    #       bottom      int
-    # text              string
-    def __make_question(self,  question_number,  location, text):
-        return {"pdfname": self.pdf_name,
-                "question_num": question_number, "location": location, "text": text}
-
-    # split quesitons to each box
-    def split(self, raw_ocr_data, longest_sequence):
         question_list = []
 
         for idx, item in enumerate(longest_sequence):
@@ -165,8 +121,7 @@ class Analyser:
                     or longest_sequence[idx+1][1] != item[1]:
                 # last question of all or last question on page,
                 # get all data up to the bottom of the most bottom word
-                print(item[11])
-                bottom_coord = self.__last_character_bottom_cords(data_on_page)
+                bottom_coord = self.__last_character_bottom_coord(data_on_page)
             elif int(longest_sequence[idx + 1][11]) != int(item[11]) + 1:
                 # there's a gap, skips this question
                 continue
@@ -178,11 +133,93 @@ class Analyser:
                 data_on_page, item[6], 1550, item[7], bottom_coord)
 
             text = self.__merge_text(data_in_question)
-            question_list.append(self.__make_question(int(item[11]),
+            question_list.append(self.__make_question(pdfname, int(item[11]),
                                                       [{"page_num": item[1], "left": 175, "right": 1550,
                                                         "top": item[7], "bottom": bottom_coord}], text))
 
         return question_list
+
+    @staticmethod
+    def __ocr_data_in_range(raw_ocr_data, left, right, top,  bottom):
+        """
+        take in raw ocr data and coords of box  
+        return raw ocr data in the box   
+        """
+
+        limited_data = []
+        for item in raw_ocr_data:
+            if (left == -1 or item[6] >= left) \
+                    and (right == -1 or (item[6] + item[8]) <= right) \
+                and (top == -1 or item[7] >= top) \
+                    and (bottom == -1 or (item[7] + item[9]) <= bottom):
+                limited_data.append(item)
+        return limited_data
+
+    @staticmethod
+    def __ocr_data_on_page(raw_ocr_data, pagenum):
+        """
+        taking raw ocr data   
+        returns ocr data on specific pdf page  
+        """
+
+        limited_data = []
+        for item in raw_ocr_data:
+            if item[1] == pagenum:
+                limited_data.append(item)
+        return limited_data
+
+    @staticmethod
+    def __merge_text(raw_ocr_data):
+        """
+        input raw_ocr_data  
+        return merged text in raw ocr data
+        """
+
+        text = ""
+        for word in raw_ocr_data:
+            text += word[11] + " "
+        return text
+
+    @staticmethod
+    def __last_character_bottom_coord(raw_ocr_data):
+        """
+        input raw ocr data  
+        return last character on ocr data's bottom coord
+
+        used to find the last quesiton on page
+        """
+        ans = -1
+        for item in raw_ocr_data:
+            ans = max(ans, item[7] + item[9])
+        return ans
+
+    # # test if BLANK PAGE is present on the page
+    # def __is_blank_page(self, pagenum):
+    #     data = self.__ocr_data_in_range(
+    #         self.__ocr_data_on_page(self.raw_ocr_data, pagenum), -1, -1, 160, 220)
+    #     for item in data:
+    #         if "BLANK" in item or "PAGE" in item:
+    #             return True
+    #     return False
+
+    @staticmethod
+    def __make_question(pdfname,  question_number,  location, text):
+        """
+        question format:  
+        pdfname           string  
+        question_num      int  
+        location          list(dict)  
+              page_num    int  
+              left        int  
+              right       int  
+              top         int  
+              bottom      int  
+        text              string  
+        """
+
+        return {"pdfname": pdfname,
+                "question_num": question_number, "location": location, "text": text}
+
 
 # def debug(self, images, extracted_data, question_list):
 
@@ -222,9 +259,20 @@ class Analyser:
 
 # main is used for debug
 def main():
-    print(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
-    pdfScanner = Analyser(DATA_DIR_PATH + "pdf/0620_s20_qp_11.pdf")
-    print(pdfScanner.process())
+
+    done_data = []
+
+    analyser = Analyser(done_data)
+    analyser.start()
+    analyser.add_task("0620_s20_qp_11")
+    isrunning = True
+    analyser.stop()
+    while isrunning:
+        isalive, isrunning, leng = analyser.status()
+        print(isalive, isrunning, leng)
+        time.sleep(1)
+
+    print(done_data)
 
 
 if __name__ == "__main__":

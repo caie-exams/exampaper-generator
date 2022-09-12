@@ -1,10 +1,14 @@
 import threading
 import queue
 
-# model class for multithreading processor
-
 
 class ProcessorModel(threading.Thread):
+    """
+    model of subclass multithreading processor
+
+    child class will only need to overwrite
+    the _process(task) method for it to work
+    """
 
     def __init__(self, done_list=None):
         """
@@ -30,7 +34,7 @@ class ProcessorModel(threading.Thread):
                 task = self._task_queue.get()
                 result = self._process(task)
                 if self._done_list is not None:
-                    self._done_list.append(result)
+                    self._done_list.extend(result)
             else:
                 self._active.clear()
         self._active.clear()
@@ -53,16 +57,16 @@ class ProcessorModel(threading.Thread):
         """
         returns the state of processor
 
-        True - True:    running and busy 
-        True - False:   running and ideal
-        False - True:   terminating and busy
-        False - False:  terninated
+        True - True:    running and busy   
+        True - False:   running and ideal   
+        False - True:   terminating and busy   
+        False - False:  terninated   
         """
         return self._alive.is_set(), self._active.is_set(), self._task_queue.qsize()
 
     def add_task(self, task):
         """
-        add new task to the task queue
+        add new task to the task queue 
 
         if the processor is terminating and
         a new task is addded, raise an error
