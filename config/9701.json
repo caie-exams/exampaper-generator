@@ -2,5 +2,8 @@
   "meta_info": {
     "subject_name": "chemistry"
   },
+  "analyser": {
+    "is_mcq": [1]
+  },
   "categoriser": {}
 }
