@@ -6,6 +6,7 @@ import pytesseract
 import numpy as np
 from pdf2image import convert_from_path
 from longest_increasing_subsequence import longest_increasing_subsequence
+from fuzzy_match import algorithims
 
 
 class Analyser(ProcessorModel):
@@ -40,25 +41,79 @@ class Analyser(ProcessorModel):
             raw_ocr_data, longest_sequence, pdfname, page_cnt)
         return question_list
 
-    @staticmethod
-    def image_preprocessing(img):
+    @ staticmethod
+    def _find_ms_page_range(raw_ocr_data):
         """
-        preprocess the image to apply change (like) greyscale
+        return the first and last page of markscheme
         """
-        # gray scale
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)
-        # thresholding
-        # img = cv2.threshold(
-        #     img, 128, 255, cv2.THRESH_BINARY_INV)[1]
-        return img
 
-    @staticmethod
-    def __raw_ocr_data_filter(raw_ocr_data):
-        filtered_ocr_data = []
-        for ocr_data in raw_ocr_data:
-            if ocr_data[11] != "" and ocr_data[10] != -1.0:
-                filtered_ocr_data.append(ocr_data)
-        return filtered_ocr_data
+        start_page = 0
+        end_page = 0
+
+        # find the strictly increasing number of pages
+        sequence = [ocr_data for ocr_data in raw_ocr_data if algorithims.levenshtein(
+            ocr_data[11], "Question") >= 0.8]
+
+        longest_sequence = longest_increasing_subsequence(
+            sequence, False, lambda x: x[1])
+
+        return [sequence[0][1], sequence[-1][1]]
+
+    @ staticmethod
+    def __find_ms_boundaries(images):
+        """
+        use vertical splits and question header to find boundaries
+        """
+
+        top_coord = 150
+        bottom_coord = 2210
+        left_coord = 175
+        right_coord = 1550
+        first_page = 0
+
+        scale = 20
+        idx = 0
+        for image in images:
+
+            # NOTE: The following codes are stole from
+            # https://developer.aliyun.com/article/973398
+
+            binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV)[1]
+
+            rows, cols = binary.shape
+
+            # 识别竖线
+            scale = 20
+            kernel = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (1, rows // scale))
+            eroded = cv2.erode(binary, kernel, iterations=1)
+            dilated_row = cv2.dilate(eroded, kernel, iterations=1)
+
+            # 识别横线:
+            scale = 40
+            kernel = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (cols // scale, 1))
+            eroded = cv2.erode(binary, kernel, iterations=1)
+            dilated_col = cv2.dilate(eroded, kernel, iterations=1)
+
+            # 将识别出来的横竖线合起来
+            bitwise_and = cv2.bitwise_and(dilated_col, dilated_row)
+
+            # 标识表格轮廓
+            merge = cv2.add(dilated_col, dilated_row)
+
+            # 获得长方形
+            contours, hierarchy = cv2.findContours(
+                merge, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            return contours, hierarchy
+
+            # cv2.drawContours(image, contours, -1, (0, 0, 255), 3)
+
+            # cv2.imwrite(DEBUG_DIR_PATH + "images/imh" +
+            # str(idx) + ".png", merge)
+
+            # idx += 1
 
     def _scan(self, pdfpath):
         """
@@ -85,7 +140,9 @@ class Analyser(ProcessorModel):
 
         images = convert_from_path(pdfpath)
         page_cnt = len(images)
-        images = map(self.image_preprocessing, images)
+        images = map(Analyser._image_preprocessing, images)
+
+        Analyser.__find_ms_boundaries(images)
 
         raw_ocr_data = []
         for idx, image in enumerate(images):
@@ -109,8 +166,9 @@ class Analyser(ProcessorModel):
         question_numbers = []
 
         for page_idx in range(0, page_cnt):
-            page = self.__ocr_data_on_page(raw_ocr_data, page_idx)
-            num_area = self.__ocr_data_in_range(page, 0, 175, 150, 2210)
+
+            page = Analyser._ocr_data_on_page(raw_ocr_data, page_idx)
+            num_area = Analyser._ocr_data_in_range(page, 0, 175, 150, 2210)
             for match in num_area:
                 if match[10] != '-1' and match[11] != "":
                     match[11] = "".join(filter(str.isdigit, match[11]))
@@ -181,11 +239,11 @@ class Analyser(ProcessorModel):
             for page_idx in range(item[1], page_upper_bound):
 
                 # page is blank
-                if self.__is_blank_page(self.__ocr_data_on_page(raw_ocr_data, page_idx)):
+                if Analyser._is_blank_page(Analyser._ocr_data_on_page(raw_ocr_data, page_idx)):
                     break
 
-                data_on_page = self.__ocr_data_in_range(
-                    self.__ocr_data_on_page(raw_ocr_data, page_idx), 175, 1550, 150, 2210)
+                data_on_page = Analyser._ocr_data_in_range(
+                    Analyser._ocr_data_on_page(raw_ocr_data, page_idx), 175, 1550, 150, 2210)
 
                 # first question is on the page
                 if page_idx == item[1]:
@@ -198,25 +256,45 @@ class Analyser(ProcessorModel):
                         page_idx == longest_sequence[idx + 1][1]:
                     bottom_coord = longest_sequence[idx + 1][7]
                 else:
-                    bottom_coord = self.__last_character_bottom_coord(
+                    bottom_coord = Analyser._last_character_bottom_coord(
                         data_on_page)
 
                 # if the boxed area is empty
-                if len(self.__raw_ocr_data_filter(self.__ocr_data_in_range(data_on_page, 175, 1550, top_coord, bottom_coord))) == 0:
+                if len(Analyser._raw_ocr_data_filter(Analyser._ocr_data_in_range(data_on_page, 175, 1550, top_coord, bottom_coord))) == 0:
                     break
 
                 coords.append({"page_num": page_idx, "left": 175, "right": 1550,
                                "top": top_coord, "bottom": bottom_coord})
 
-                text += self.__merge_text(self.__ocr_data_in_range(
+                text += Analyser._merge_text(Analyser._ocr_data_in_range(
                     data_on_page, 175, 1550, top_coord, bottom_coord))
 
-            question_list.append(self.__make_question(pdfname, int(item[11]),
-                                                      coords, text))
+            question_list.append(Analyser._make_question(pdfname, int(item[11]),
+                                                         coords, text))
         return question_list
 
-    @staticmethod
-    def __ocr_data_in_range(raw_ocr_data, left, right, top,  bottom):
+    @ staticmethod
+    def _image_preprocessing(img):
+        """
+        preprocess the image to apply change (like) greyscale
+        """
+        # gray scale
+        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)
+        # thresholding
+        # img = cv2.threshold(
+        #     img, 128, 255, cv2.THRESH_BINARY_INV)[1]
+        return img
+
+    @ staticmethod
+    def _raw_ocr_data_filter(raw_ocr_data):
+        filtered_ocr_data = []
+        for ocr_data in raw_ocr_data:
+            if ocr_data[11] != "" and ocr_data[10] != -1.0:
+                filtered_ocr_data.append(ocr_data)
+        return filtered_ocr_data
+
+    @ staticmethod
+    def _ocr_data_in_range(raw_ocr_data, left, right, top,  bottom):
         """
         take in raw ocr data and coords of box
         return raw ocr data in the box
@@ -231,8 +309,8 @@ class Analyser(ProcessorModel):
                 limited_data.append(item)
         return limited_data
 
-    @staticmethod
-    def __ocr_data_on_page(raw_ocr_data, pagenum):
+    @ staticmethod
+    def _ocr_data_on_page(raw_ocr_data, pagenum):
         """
         taking raw ocr data
         returns ocr data on specific pdf page
@@ -244,8 +322,8 @@ class Analyser(ProcessorModel):
                 limited_data.append(item)
         return limited_data
 
-    @staticmethod
-    def __merge_text(raw_ocr_data):
+    @ staticmethod
+    def _merge_text(raw_ocr_data):
         """
         input raw_ocr_data
         return merged text in raw ocr data
@@ -256,8 +334,8 @@ class Analyser(ProcessorModel):
             text += word[11] + " "
         return text
 
-    @staticmethod
-    def __last_character_bottom_coord(raw_ocr_data):
+    @ staticmethod
+    def _last_character_bottom_coord(raw_ocr_data):
         """
         input raw ocr data
         return last character on ocr data's bottom coord
@@ -269,8 +347,8 @@ class Analyser(ProcessorModel):
             ans = max(ans, item[7] + item[9])
         return ans
 
-    @staticmethod
-    def __is_blank_page(raw_ocr_data):
+    @ staticmethod
+    def _is_blank_page(raw_ocr_data):
         """
         test if BLANK PAGE is present on the page
         """
@@ -280,8 +358,8 @@ class Analyser(ProcessorModel):
                 return True
         return False
 
-    @staticmethod
-    def __make_question(pdfname,  question_number,  location, text):
+    @ staticmethod
+    def _make_question(pdfname,  question_number,  location, text):
         """
         question format:
         pdfname           string
@@ -303,7 +381,7 @@ class Analyser(ProcessorModel):
 def main():
 
     done_data = []
-    pdfname = "9608_s20_qp_11"
+    pdfname = "9701_w17_ms_11"
 
     analyser = Analyser(done_data)
     analyser.start()
@@ -315,7 +393,7 @@ def main():
         print(isalive, isrunning, leng)
         time.sleep(1)
 
-    # print(done_data)
+    print(done_data)
 
     print("start deugging")
 
@@ -329,13 +407,13 @@ def debug(question_list, pdfname):
     pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
     images = convert_from_path(pdfpath)
 
-    images = map(Analyser.image_preprocessing, images)
+    images = map(Analyser._image_preprocessing, images)
 
     for idx, image in enumerate(images):
 
         new_image = image
 
-        # print line
+        # # print line
         # new_image = cv2.line(
         #     new_image, (175, 0), (175, new_image.shape[0]), (0, 100, 0), 2)
         # new_image = cv2.line(new_image, (0, 2210),
@@ -345,15 +423,22 @@ def debug(question_list, pdfname):
         # new_image = cv2.line(new_image, (1550, 0),
         #                      (1550, new_image.shape[0]), (0, 100, 0), 2)
 
-        # print questions
-        for item in question_list:
-            for question in item["location"]:
+        DATA = []
 
-                if question["page_num"] == idx:
-                    new_image = cv2.rectangle(
-                        new_image, (question["left"], question["top"]), (question["right"], question["bottom"]), (0, 0, 0), 2)
-                    # new_image = cv2.putText(
-                    #     new_image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
+        for item in DATA:
+            if item[1] == idx:
+                new_image = cv2.rectangle(
+                    new_image, (item[6], item[7]), (item[6] + item[8], item[7] + item[9]), (0, 0, 0), 2)
+
+        # print questions
+        # for item in question_list:
+        #     for question in item["location"]:
+
+        #         if question["page_num"] == idx:
+        #             new_image = cv2.rectangle(
+        #                 new_image, (question["left"], question["top"]), (question["right"], question["bottom"]), (0, 0, 0), 2)
+        #             # new_image = cv2.putText(
+        #             #     new_image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
 
         # write to images
         cv2.imwrite(DEBUG_DIR_PATH + "images/image" +
