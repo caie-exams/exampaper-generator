@@ -21,14 +21,14 @@ class PostProcessor(ProcessorModel):
     """
 
     @ staticmethod
-    def __extract_text_from_pdf(pdfname, page):
+    def _extract_text_from_pdf(pdfname, page):
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         with open(pdfpath, "rb") as pdf_object:
             pdf_reader = PyPDF2.PdfReader(pdf_object)
             return pdf_reader.pages[page].extractText()
 
     @ staticmethod
-    def __clean_text(text):
+    def _clean_text(text):
         # replace newline and tab with space
         text = text.replace("\n", " ")
         text = text.replace("\t", " ")
@@ -43,11 +43,11 @@ class PostProcessor(ProcessorModel):
 
         extracted_text_chunk = ""
         for location in question["location"]:
-            extracted_text_chunk += self.__extract_text_from_pdf(
+            extracted_text_chunk += self._extract_text_from_pdf(
                 question["pdfname"], location["page_num"])
 
-        extracted_text_chunk = self.__clean_text(extracted_text_chunk)
-        question["text"] = self.__clean_text(question["text"])
+        extracted_text_chunk = self._clean_text(extracted_text_chunk)
+        question["text"] = self._clean_text(question["text"])
 
         word_cnt = int(len(extracted_text_chunk.split(" ")))
 

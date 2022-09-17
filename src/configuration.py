@@ -24,12 +24,12 @@ class Configurator:
             raise ("default.json not found.")
 
         config_file_names.remove("default.json")
-        self.default_config_json = self.__load_config("default.json")
+        self.default_config_json = self._load_config("default.json")
 
         self.config_json_list = {}
 
         for config_file_name in config_file_names:
-            config_json = self.__load_config(config_file_name)
+            config_json = self._load_config(config_file_name)
             self.config_json_list[config_file_name.removesuffix(
                 ".json")] = merge(self.default_config_json, config_json)
 
@@ -41,7 +41,7 @@ class Configurator:
             return self.default_config_json
 
     @ staticmethod
-    def __load_config(config_name):
+    def _load_config(config_name):
         config_path = CONFIG_DIR_PATH + config_name
         with open(config_path, "r") as config_file:
             return json.loads(config_file.read())
