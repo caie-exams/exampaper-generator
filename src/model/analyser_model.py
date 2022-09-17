@@ -90,7 +90,7 @@ class AnalyserModel:
         return raw_ocr_data
 
     @staticmethod
-    def _locate_question_numbers(raw_ocr_data, start_page, end_page, left, right, top, bottom):
+    def _locate_question_numbers(raw_ocr_data, start_page, end_page, left_bound, right_bound, top_bound, bottom_bound):
         """
         input raw_ocr_data and page range and coords of content area
         return list of ocr raw data of question numbers
@@ -104,7 +104,12 @@ class AnalyserModel:
             page = AnalyserModel._raw_ocr_data_filter(
                 AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx))
             num_area = AnalyserModel._ocr_data_in_range(
-                page, 0, left, top, bottom)
+                page, 0, left_bound, top_bound, bottom_bound)
+
+            # debug
+            with open(DEBUG_DIR_PATH + "json/question_num_data" + str(page_idx) + ".json", 'a') as debugfile:
+                debugfile.write(json.dumps(page))
+
             for match in num_area:
                 match[11] = "".join(filter(str.isdigit, match[11]))
                 if match[11] != "" and int(match[11]) > 0:

@@ -1,7 +1,6 @@
 # must dos
 
 - rewrite code to adapt config
-- use "quesiton" to locate the question number for mark schemes, or use grid line as indicator
 
 - write code for categoriser
 - add category keywords for testing
