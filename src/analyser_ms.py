@@ -23,6 +23,14 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMS._find_ms_content_vert_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
+        bottom_bound = max([AnalyserMS._find_ms_content_vert_boundaries(
+            images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[3]]
+            for idx in range(start_idx, end_idx + 1))[0]
+
+        # test
+        test_list = AnalyserMS._find_ms_content_vert_boundaries(
+            images[5], AnalyserModel._ocr_data_on_page(raw_ocr_data,  5))
+        print(test_list)
 
         longest_non_decreasing_sequence = longest_increasing_subsequence(
             AnalyserModel._locate_question_numbers(
@@ -62,7 +70,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 
         return [longest_sequence[0], longest_sequence[-1]]
 
-    @staticmethod
+    @ staticmethod
     def _remove_grid_lines(image):
         """
         tessearct completely fuck up images with lots of grid lines
@@ -138,11 +146,11 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 
         vert_contours = tidy_up_contours_data(vert_contours)
         vert_contours = list(sorted(set([y[0][0] for y in [
-            x for x in vert_contours if x[0][0] == x[1][0]]])))
+            x for x in vert_contours if abs(x[0][0] - x[1][0]) < 5]])))
 
         hort_contours = tidy_up_contours_data(hort_contours)
         hort_contours = list(sorted(set([y[0][1] for y in [
-            x for x in hort_contours if x[0][1] == x[1][1]]])))
+            x for x in hort_contours if abs(x[0][1] - x[1][1]) < 5]])))
 
         # now use the raw ocr data to find the top bound
 
@@ -180,7 +188,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 def main():
 
     done_data = []
-    pdfname = "9701_w17_ms_11"
+    pdfname = "9701_w17_ms_22"
 
     analyser = AnalyserMS(done_data)
     analyser.start()
