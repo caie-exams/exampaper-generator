@@ -15,7 +15,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
-        # page_cnt = len(images)
+        page_cnt = len(images)
         images = list(map(AnalyserModel._image_preprocessing, images))
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
@@ -24,14 +24,21 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMS._find_ms_content_vert_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
 
-        longest_sequence = longest_increasing_subsequence(
+        longest_non_decreasing_sequence = longest_increasing_subsequence(
             AnalyserModel._locate_question_numbers(
-                raw_ocr_data, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound), False, lambda x: int(x[11]) * 10000 + x[1] * 100 + x[7] * 1)
+                raw_ocr_data, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound),
+            False, lambda x: int(x[11]) * 10000 + x[1] * 100 + x[7] * 1)
 
-        print(longest_sequence)
-        print(left_bound, right_bound, top_bound, bottom_bound)
+        # for each duplicate question number only save the first copy
+        longest_increasing_sequence = []
+        for item in longest_non_decreasing_sequence:
+            if item[11] not in [x[11] for x in longest_increasing_sequence]:
+                longest_increasing_sequence.append(item)
 
-        exit()
+        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname,
+                                                          page_cnt, left_bound, right_bound, top_bound, bottom_bound)
+
+        return question_list
 
     @ staticmethod
     def _find_ms_page_range(raw_ocr_data):
@@ -53,7 +60,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         longest_sequence = longest_increasing_subsequence(
             common_sequence, False)
 
-        return [longest_sequence[0], longest_sequence[1]]
+        return [longest_sequence[0], longest_sequence[-1]]
 
     @ staticmethod
     def _find_ms_content_vert_boundaries(image, raw_ocr_data):
@@ -175,6 +182,8 @@ def main():
     print(done_data)
 
     print("start deugging")
+
+    AnalyserModel.debug(done_data, pdfname)
 
 
 if __name__ == "__main__":
