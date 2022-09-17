@@ -62,15 +62,20 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 
         return [longest_sequence[0], longest_sequence[-1]]
 
-    @ staticmethod
-    def _find_ms_content_vert_boundaries(image, raw_ocr_data):
+    @staticmethod
+    def _remove_grid_lines(image):
         """
-        use vertical splits and question header to find boundaries
-        return contours and hierarchy of the image
+        tessearct completely fuck up images with lots of grid lines
+        so it's better to remove them before further recognizing
         """
 
+        return cv2.bitwise_xor(image, cv2.add(*AnalyserMS._get_row_and_col(image)))
+
+    @ staticmethod
+    def _get_row_and_col(image):
         # NOTE: The following codes are stolen from
         # https://developer.aliyun.com/article/973398
+        # https://juejin.cn/post/6844904078032666631
         # the purpose is to recognise the vertical lines
         # ----------------------------------------------------
 
@@ -91,16 +96,24 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         eroded = cv2.erode(binary, kernel, iterations=1)
         dilated_col = cv2.dilate(eroded, kernel, iterations=1)
 
+        # overlay = cv2.drawContours(image, contours, -1, (0, 0, 255), 3)
+
+        return dilated_row, dilated_col
+
+    @ staticmethod
+    def _find_ms_content_vert_boundaries(image, raw_ocr_data):
+        """
+        use vertical splits and question header to find boundaries
+        return contours and hierarchy of the image
+        """
+
+        dilated_row, dilated_col = AnalyserMS._get_row_and_col(image)
+
         # 获得线
         vert_contours = cv2.findContours(
             dilated_row, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         hort_contours = cv2.findContours(
             dilated_col, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-
-        # overlay = cv2.drawContours(image, contours, -1, (0, 0, 255), 3)
-
-        # NOTE: The stolen code ends here
-        # ----------------------------------------------------
 
         # After the veritcal lines were fetched,
         # Proceed to extract the coordinates
@@ -167,7 +180,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
 def main():
 
     done_data = []
-    pdfname = "9701_w17_ms_22"
+    pdfname = "9701_w17_ms_11"
 
     analyser = AnalyserMS(done_data)
     analyser.start()
@@ -179,7 +192,7 @@ def main():
         print(isalive, isrunning, leng)
         time.sleep(1)
 
-    print(done_data)
+    # print(done_data)
 
     print("start deugging")
 

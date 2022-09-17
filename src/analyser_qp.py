@@ -33,10 +33,6 @@ class AnalyserQP(AnalyserModel, ProcessorModel):
             images)
         # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
 
-        # debug
-        with open(DEBUG_DIR_PATH + "json/raw_ocr_data.json", "w") as debugfile:
-            debugfile.write(json.dumps(raw_ocr_data))
-
         question_num_data = AnalyserModel._locate_question_numbers(
             raw_ocr_data, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
 

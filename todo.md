@@ -1,5 +1,6 @@
 # must dos
 
+- **Train tesseract data for mcq markscheme**
 - rewrite code to adapt config
 
 - write code for categoriser

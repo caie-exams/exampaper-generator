@@ -79,7 +79,7 @@ class AnalyserModel:
 
         raw_ocr_data = []
         for idx, image in enumerate(images):
-            raw_data = pytesseract.image_to_data(image, config=r"--psm 11")
+            raw_data = pytesseract.image_to_data(image)
             for item in raw_data.splitlines()[1:]:
                 item_data = item.split('\t')
                 item_data[:10] = map(int, item_data[:10])
@@ -105,10 +105,6 @@ class AnalyserModel:
                 AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx))
             num_area = AnalyserModel._ocr_data_in_range(
                 page, 0, left_bound, top_bound, bottom_bound)
-
-            # debug
-            with open(DEBUG_DIR_PATH + "json/question_num_data" + str(page_idx) + ".json", 'a') as debugfile:
-                debugfile.write(json.dumps(page))
 
             for match in num_area:
                 match[11] = "".join(filter(str.isdigit, match[11]))
@@ -339,5 +335,9 @@ class AnalyserModel:
                         str(idx) + ".png", new_image)
 
             # write question data
-            with open(DEBUG_DIR_PATH + "json/analyser_result.json", "w") as debugfile:
-                debugfile.write(json.dumps(question_list))
+            AnalyserModel.write_debugfile("analyser_result", question_list)
+
+    @staticmethod
+    def write_debugfile(filename, data):
+        with open(DEBUG_DIR_PATH + "json/" + str(filename) + ".json", "w") as debugfile:
+            debugfile.write(json.dumps(data))
