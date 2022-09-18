@@ -1,7 +1,6 @@
 # must dos
 
 - **Train tesseract data for mcq markscheme**
-- **use tabula and pypdf2 to adapt mcq markschemes**
 - rewrite code to adapt config
 
 - write code for categoriser

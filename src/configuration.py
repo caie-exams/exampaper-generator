@@ -10,7 +10,7 @@ TMP_DIR_PATH = ROOT_DIR_PATH + "tmp/"
 
 # detect if path is right
 if not os.path.exists(DATA_DIR_PATH):
-    raise ("DATA DIR not found! Please run outside the src folder.")
+    raise ("data dir not found")
 
 
 class Configurator:
@@ -26,7 +26,7 @@ class Configurator:
                 config_file_names.append(config_file_name)
 
         if "default.json" not in config_file_names:
-            raise ("default.json not found.")
+            raise ("default.json not found")
 
         config_file_names.remove("default.json")
         self.default_config_json = self._load_config("default.json")

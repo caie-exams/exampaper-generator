@@ -72,6 +72,6 @@ class ProcessorModel(threading.Thread):
         a new task is addded, raise an error
         """
         if not self._alive.is_set():
-            raise Exception("New task can't be added while terminating.")
+            raise Exception("new task can't be added while terminating")
         self._task_queue.put(task)
         self._active.set()

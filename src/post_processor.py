@@ -11,8 +11,9 @@ import time
 class PostProcessor(ProcessorModel):
 
     """
-    clean the text in question to make it ready for search
-    by fuzzy search in text extracted from original pdf
+    clean the text in question and non mcq answer
+    to make it ready for search by fuzzy search in
+    text extracted from original pdf
 
     input - individual quesitons  
     output - processed individual quesitons  
@@ -28,7 +29,7 @@ class PostProcessor(ProcessorModel):
             return pdf_reader.pages[page].extractText()
 
     @ staticmethod
-    def _clean_text(text):
+    def _clean_text(text: str) -> str:
         # replace newline and tab with space
         text = text.replace("\n", " ")
         text = text.replace("\t", " ")

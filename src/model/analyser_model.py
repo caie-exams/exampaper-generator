@@ -4,8 +4,6 @@ import cv2
 import pytesseract
 import numpy as np
 from pdf2image import convert_from_path
-from longest_increasing_subsequence import longest_increasing_subsequence
-from fuzzy_match import algorithims
 
 
 class AnalyserModel:
@@ -210,16 +208,20 @@ class AnalyserModel:
     @ staticmethod
     def _make_question(pdfname,  question_number,  location, text):
         """
+        \b
         question format:
         pdfname           string
         question_num      int
-        location          list(dict)
+        location          list[dict]
               page_num    int
               left        int
               right       int
               top         int
               bottom      int
         text              string
+        categories        list[str]
+
+        this is both suitable for question data and answer datas
         """
 
         return {"pdfname": pdfname,

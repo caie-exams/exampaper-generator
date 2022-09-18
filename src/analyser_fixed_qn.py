@@ -8,7 +8,7 @@ from longest_increasing_subsequence import longest_increasing_subsequence
 import time
 
 
-class AnalyserQP(AnalyserModel, ProcessorModel):
+class AnalyserFixedQN(AnalyserModel, ProcessorModel):
     """
     use to process most questions paper and some mcqs that
     - does not have a grid line
@@ -57,7 +57,7 @@ def main():
     done_data = []
     pdfname = "9702_s15_ms_22"
 
-    analyser = AnalyserQP(done_data)
+    analyser = AnalyserFixedQN(done_data)
     analyser.start()
     analyser.add_task(pdfname)
     isrunning = True

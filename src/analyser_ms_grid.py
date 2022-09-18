@@ -9,7 +9,7 @@ import time
 import random
 
 
-class AnalyserMS(AnalyserModel, ProcessorModel):
+class AnalyserMSGrid(AnalyserModel, ProcessorModel):
 
     """
     use ocr methods to analyse mcqs that
@@ -25,11 +25,11 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         images = list(map(AnalyserModel._image_preprocessing, images))
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
-        start_idx, end_idx = AnalyserMS._find_ms_page_range(raw_ocr_data)
+        start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
 
-        left_bound, right_bound, top_bound, bottom_bound = AnalyserMS._find_ms_content_vert_boundaries(
+        left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_vert_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
-        bottom_bound = max([AnalyserMS._find_ms_content_vert_boundaries(
+        bottom_bound = max([AnalyserMSGrid._find_ms_content_vert_boundaries(
             images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[3]]
             for idx in range(start_idx, end_idx + 1))[0]
 
@@ -78,7 +78,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         so it's better to remove them before further recognizing
         """
 
-        return cv2.bitwise_xor(image, cv2.add(*AnalyserMS._get_row_and_col(image)))
+        return cv2.bitwise_xor(image, cv2.add(*AnalyserMSGrid._get_row_and_col(image)))
 
     @ staticmethod
     def _get_row_and_col(image):
@@ -116,7 +116,7 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         return contours and hierarchy of the image
         """
 
-        dilated_row, dilated_col = AnalyserMS._get_row_and_col(image)
+        dilated_row, dilated_col = AnalyserMSGrid._get_row_and_col(image)
 
         # 获得线
         vert_contours = cv2.findContours(
@@ -191,7 +191,7 @@ def main():
     done_data = []
     pdfname = "9701_w17_ms_22"
 
-    analyser = AnalyserMS(done_data)
+    analyser = AnalyserMSGrid(done_data)
     analyser.start()
     analyser.add_task(pdfname)
     isrunning = True
