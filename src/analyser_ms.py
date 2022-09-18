@@ -11,6 +11,12 @@ import random
 
 class AnalyserMS(AnalyserModel, ProcessorModel):
 
+    """
+    use ocr methods to analyse mcqs that
+    - with grid lines
+    - are not mcq
+    """
+
     def _process(self, pdfname):
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
@@ -26,11 +32,6 @@ class AnalyserMS(AnalyserModel, ProcessorModel):
         bottom_bound = max([AnalyserMS._find_ms_content_vert_boundaries(
             images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[3]]
             for idx in range(start_idx, end_idx + 1))[0]
-
-        # test
-        test_list = AnalyserMS._find_ms_content_vert_boundaries(
-            images[5], AnalyserModel._ocr_data_on_page(raw_ocr_data,  5))
-        print(test_list)
 
         longest_non_decreasing_sequence = longest_increasing_subsequence(
             AnalyserModel._locate_question_numbers(

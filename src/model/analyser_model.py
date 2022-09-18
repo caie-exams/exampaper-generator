@@ -52,7 +52,7 @@ class AnalyserModel:
     #     return question_list
 
     @ staticmethod
-    def _scan_to_get_raw_ocr_data(images):
+    def _scan_to_get_raw_ocr_data(images, tesseract_config=None):
         """
         taking pdf path
         returns a raw ocr data and the page count
@@ -79,7 +79,12 @@ class AnalyserModel:
 
         raw_ocr_data = []
         for idx, image in enumerate(images):
-            raw_data = pytesseract.image_to_data(image)
+            if tesseract_config is not None:
+                raw_data = pytesseract.image_to_data(
+                    image, config=tesseract_config)
+            else:
+                raw_data = pytesseract.image_to_data(
+                    image)
             for item in raw_data.splitlines()[1:]:
                 item_data = item.split('\t')
                 item_data[:10] = map(int, item_data[:10])

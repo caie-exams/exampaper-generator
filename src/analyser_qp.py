@@ -10,6 +10,10 @@ import time
 
 class AnalyserQP(AnalyserModel, ProcessorModel):
     """
+    use to process most questions paper and some mcqs that
+    - does not have a grid line
+    - the position of quesition numbers are fixed 
+
     takes name of pdf and spit out questions raw data
 
     input - name of pdf
@@ -30,8 +34,10 @@ class AnalyserQP(AnalyserModel, ProcessorModel):
         page_cnt = len(images)
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images)
+            images, tesseract_config="--psm 11")
         # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
+
+        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
 
         question_num_data = AnalyserModel._locate_question_numbers(
             raw_ocr_data, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
@@ -49,7 +55,7 @@ class AnalyserQP(AnalyserModel, ProcessorModel):
 def main():
 
     done_data = []
-    pdfname = "0620_s20_qp_11"
+    pdfname = "9702_s15_ms_22"
 
     analyser = AnalyserQP(done_data)
     analyser.start()
