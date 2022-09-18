@@ -1,15 +1,12 @@
 from model.analyser_model import *
-from model.processor_model import *
 
 import cv2
-import pytesseract
 from pdf2image import convert_from_path
 from longest_increasing_subsequence import longest_increasing_subsequence
-import time
-import random
+from fuzzy_match import algorithims
 
 
-class AnalyserMSGrid(AnalyserModel, ProcessorModel):
+class AnalyserMSGrid(AnalyserModel):
 
     """
     use ocr methods to analyse mcqs that
@@ -17,7 +14,7 @@ class AnalyserMSGrid(AnalyserModel, ProcessorModel):
     - are not mcq
     """
 
-    def _process(self, pdfname):
+    def process(self, pdfname):
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
@@ -188,18 +185,10 @@ class AnalyserMSGrid(AnalyserModel, ProcessorModel):
 
 def main():
 
-    done_data = []
     pdfname = "9701_w17_ms_22"
 
-    analyser = AnalyserMSGrid(done_data)
-    analyser.start()
-    analyser.add_task(pdfname)
-    isrunning = True
-    analyser.stop()
-    while isrunning:
-        isalive, isrunning, leng = analyser.status()
-        print(isalive, isrunning, leng)
-        time.sleep(1)
+    analyser = AnalyserMSGrid()
+    done_data = analyser.process(pdfname)
 
     # print(done_data)
 

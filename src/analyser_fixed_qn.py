@@ -1,5 +1,4 @@
 from model.analyser_model import *
-from model.processor_model import *
 
 import cv2
 import pytesseract
@@ -8,7 +7,7 @@ from longest_increasing_subsequence import longest_increasing_subsequence
 import time
 
 
-class AnalyserFixedQN(AnalyserModel, ProcessorModel):
+class AnalyserFixedQN(AnalyserModel):
     """
     use to process most questions paper and some mcqs that
     - does not have a grid line
@@ -22,7 +21,7 @@ class AnalyserFixedQN(AnalyserModel, ProcessorModel):
     relation is one-to-many
     """
 
-    def _process(self, pdfname):
+    def process(self, pdfname):
 
         self.config = CONFIG.get_config(pdfname)
 
@@ -54,18 +53,10 @@ class AnalyserFixedQN(AnalyserModel, ProcessorModel):
 # main is used for debug
 def main():
 
-    done_data = []
     pdfname = "9702_s15_ms_22"
 
-    analyser = AnalyserFixedQN(done_data)
-    analyser.start()
-    analyser.add_task(pdfname)
-    isrunning = True
-    analyser.stop()
-    while isrunning:
-        isalive, isrunning, leng = analyser.status()
-        print(isalive, isrunning, leng)
-        time.sleep(1)
+    analyser = AnalyserFixedQN()
+    done_data = analyser.process(pdfname)
 
     # print(done_data)
 

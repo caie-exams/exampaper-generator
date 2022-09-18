@@ -1,14 +1,12 @@
 from configuration import *
-from model.processor_model import *
 
 import PyPDF2
 from fuzzysearch import find_near_matches
 from func_timeout import func_timeout, FunctionTimedOut
 import json
-import time
 
 
-class PostProcessor(ProcessorModel):
+class PostProcessor():
 
     """
     clean the text in question and non mcq answer
@@ -40,7 +38,7 @@ class PostProcessor(ProcessorModel):
 
         return text
 
-    def _process(self, question):
+    def process(self, question):
 
         extracted_text_chunk = ""
         for location in question["location"]:
@@ -62,29 +60,3 @@ class PostProcessor(ProcessorModel):
             question["text"] = match[0].matched
 
         return [question]
-
-
-def main():
-    done_data = []
-
-    post_processor = PostProcessor(done_data)
-    post_processor.start()
-    print(post_processor.status())
-    # load test data
-    with open(DEBUG_DIR_PATH + "json/analyser_result.json", "r") as test_data_file:
-        test_data = json.loads(test_data_file.read())
-
-    for question in test_data:
-        post_processor.add_task(question)
-    isrunning = True
-    post_processor.stop()
-    while isrunning:
-        isalive, isrunning, leng = post_processor.status()
-        print(isalive, isrunning, leng)
-        time.sleep(1)
-
-    print(done_data)
-
-
-if __name__ == "__main__":
-    exit(main())

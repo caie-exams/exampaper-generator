@@ -13,5 +13,5 @@
 # minor improvements
 
 - add control mechanism
-- add config logging and debugging mechanism
 - and multiprocessing for full core utilization
+- add config logging and debugging mechanism

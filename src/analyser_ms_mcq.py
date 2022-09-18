@@ -1,11 +1,9 @@
 from model.analyser_model import *
-from model.processor_model import *
 
-import time
 import PyPDF2
 
 
-class AnalyserMSMCQ(AnalyserModel, ProcessorModel):
+class AnalyserMSMCQ(AnalyserModel):
 
     """
     use ocr methods to analyse mcqs markschemes that
@@ -15,7 +13,7 @@ class AnalyserMSMCQ(AnalyserModel, ProcessorModel):
     and will be siginificantly faster
     """
 
-    def _process(self, pdfname):
+    def process(self, pdfname):
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         extracted_text = []
@@ -92,18 +90,10 @@ class AnalyserMSMCQ(AnalyserModel, ProcessorModel):
 
 def main():
 
-    done_data = []
     pdfname = "9701_w16_ms_11"
 
-    analyser = AnalyserMSMCQ(done_data)
-    analyser.start()
-    analyser.add_task(pdfname)
-    isrunning = True
-    analyser.stop()
-    while isrunning:
-        isalive, isrunning, leng = analyser.status()
-        print(isalive, isrunning, leng)
-        time.sleep(1)
+    analyser = AnalyserMSMCQ()
+    done_data = analyser.process(pdfname)
 
     print(done_data)
 
