@@ -23,17 +23,19 @@ class AnalyserFixedQN(AnalyserModel):
 
     def process(self, pdfname):
 
-        self.config = CONFIG.get_config(pdfname)
+        # self.config = CONFIG.get_config(pdfname)
 
         CONTENT_AREA_BOUND = [175, 1550, 150, 2210]
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
         images = list(map(AnalyserModel._image_preprocessing, images))
+        image_width, image_height = images[0].shape[1], images[0].shape[0]
+
         page_cnt = len(images)
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, tesseract_config="--psm 11")
+            images, tesseract_config="--psm 11 -l arial")
         # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
 
         AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
@@ -46,7 +48,7 @@ class AnalyserFixedQN(AnalyserModel):
         # question_list = self._generate_mcq(
         #     raw_ocr_data, longest_sequence,  pdfname)
         question_list = self._generate_questions(
-            raw_ocr_data, longest_sequence, pdfname, page_cnt, *CONTENT_AREA_BOUND)
+            raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND)
         return question_list
 
 
@@ -57,6 +59,8 @@ def main():
 
     analyser = AnalyserFixedQN()
     done_data = analyser.process(pdfname)
+
+    print(done_data)
 
     # print(done_data)
 

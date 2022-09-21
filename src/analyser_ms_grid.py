@@ -20,6 +20,7 @@ class AnalyserMSGrid(AnalyserModel):
         images = convert_from_path(pdfpath)
         page_cnt = len(images)
         images = list(map(AnalyserModel._image_preprocessing, images))
+        image_width, image_height = images[0].shape[1], images[0].shape[0]
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
@@ -41,7 +42,7 @@ class AnalyserMSGrid(AnalyserModel):
             if item[11] not in [x[11] for x in longest_increasing_sequence]:
                 longest_increasing_sequence.append(item)
 
-        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname,
+        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname, image_width, image_height
                                                           page_cnt, left_bound, right_bound, top_bound, bottom_bound)
 
         return question_list

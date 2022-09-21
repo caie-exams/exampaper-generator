@@ -43,6 +43,9 @@ class AnalyserMSMCQ(AnalyserModel):
 
     @staticmethod
     def _generate_new(pdfname, extracted_text):
+        """
+        generate new version of mcq
+        """
 
         question_list = []
 
@@ -61,6 +64,10 @@ class AnalyserMSMCQ(AnalyserModel):
 
     @ staticmethod
     def _generate_old(pdfname, extracted_text):
+        """
+        generate old version of mcq
+        """
+
         question_list = []
 
         for page in extracted_text:

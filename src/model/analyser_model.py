@@ -14,41 +14,6 @@ class AnalyserModel:
     this class is default for analysing quesiton papers, can be inherited
     """
 
-    # def _generate_mcq(self, raw_ocr_data, longest_sequence, pdfname):
-    #     """
-    #     split and generate quesitions from longest sequence
-    #     """
-
-    #     question_list = []
-
-    #     for idx, item in enumerate(longest_sequence):
-
-    #         data_on_page = self.__ocr_data_in_range(
-    #             self.__ocr_data_on_page(raw_ocr_data, item[1]), 175, 1550, 150, 2210)
-    #         bottom_coord = -1
-    #         data_in_question = []
-    #         # last question of all or last question on page,
-    #         # get all data up to the bottom of the most bottom word
-    #         if idx == len(longest_sequence) - 1 \
-    #                 or longest_sequence[idx+1][1] != item[1]:
-    #             bottom_coord = self.__last_character_bottom_coord(data_on_page)
-    #         # there's a gap, skips this question
-    #         elif int(longest_sequence[idx + 1][11]) != int(item[11]) + 1:
-    #             continue
-    #         else:
-    #             # this question's bottom coord = next questions's top cord
-    #             bottom_coord = longest_sequence[idx + 1][7]
-
-    #         data_in_question = self.__ocr_data_in_range(
-    #             data_on_page, item[6], 1550, item[7], bottom_coord)
-
-    #         text = self.__merge_text(data_in_question)
-    #         question_list.append(self.__make_question(pdfname, int(item[11]),
-    #                                                   [{"page_num": item[1], "left": 175, "right": 1550,
-    #                                                     "top": item[7], "bottom": bottom_coord}], text))
-
-    #     return question_list
-
     @ staticmethod
     def _scan_to_get_raw_ocr_data(images, tesseract_config=None):
         """
@@ -206,20 +171,20 @@ class AnalyserModel:
         return False
 
     @ staticmethod
-    def _make_question(pdfname,  question_number,  location, text):
+    def _make_question(pdfname,  question_number,  location, text=None):
         """
         \b
         question format:
-        pdfname           string
-        question_num      int
-        location          list[dict]
-              page_num    int
-              left        int
-              right       int
-              top         int
-              bottom      int
-        text              string
-        categories        list[str]
+        pdfname              string            name of pdf
+        question_num         int               number of question
+        location             list[dict]
+            page_num         int               number of page
+            left             int               percentage
+            right            int               percentage
+            top              int               percentage
+            bottom           int               percentage
+            hashed_filename  str               hashed filename of cropped images/pdfs
+        text                 str               answer of mcq or text of question
 
         this is both suitable for question data and answer datas
         """
@@ -228,7 +193,7 @@ class AnalyserModel:
                 "question_num": question_number, "location": location, "text": text}
 
     @staticmethod
-    def _generate_questions(raw_ocr_data, question_number_sequence, pdfname, page_cnt,
+    def _generate_questions(raw_ocr_data, question_number_sequence, pdfname, page_cnt, image_width, image_height,
                             left_bound, right_bound, top_bound, bottom_bound):
         """
         takes longest incresing sequence of longest increasing
@@ -285,14 +250,14 @@ class AnalyserModel:
                         ))) == 0:
                     break
 
-                coords.append({"page_num": page_idx, "left": left_bound, "right": right_bound,
-                               "top": top_coord, "bottom": bottom_coord})
+                coords.append({"page_num": page_idx, "left": int(left_bound / image_width * 100), "right": int(right_bound / image_width * 100),
+                               "top": int(top_coord / image_height * 100), "bottom": int(bottom_coord / image_height * 100)})
 
-                text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
-                    data_on_page, left_bound, right_bound, top_coord, bottom_coord))
+                # text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
+                # data_on_page, left_bound, right_bound, top_coord, bottom_coord))
 
-            question_list.append(AnalyserModel._make_question(pdfname, int(item[11]),
-                                                              coords, text))
+            question_list.append(AnalyserModel._make_question(
+                pdfname, int(item[11]), coords))
         return question_list
 
     @staticmethod

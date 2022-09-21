@@ -1,13 +1,37 @@
-import PyPDF2
+from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
+import pdftotext
 
-pdfpath = "/Users/justin/Codes/ocr/data/pdf/9701_w17_ms_11.pdf"
+pdf_file = PdfFileReader(
+    open("/Users/justin/Codes/ocr/data/pdf/0620_s20_qp_21.pdf", "rb"))
+page = pdf_file.getPage(0)
 
-with open(pdfpath, "rb") as pdf_object:
-    pdf_reader = PyPDF2.PdfReader(pdf_object)
-    print(pdf_reader.pages[1].extractText())
 
-pdfpath = "/Users/justin/Codes/ocr/data/pdf/9701_w16_ms_11.pdf"
+# page.bleedBox.lowerRight = (10, 20)
+# page.bleedBox.lowerLeft = (30,
+#                            40)
+# page.bleedBox.upperRight = (
+#     50, 60)
+# page.bleedBox.upperLeft = (70,
+#                            80)
 
-with open(pdfpath, "rb") as pdf_object:
-    pdf_reader = PyPDF2.PdfReader(pdf_object)
-    print(pdf_reader.pages[1].extractText())
+page.mediaBox.upperRight = (500, -1)
+page.mediaBox.upperLeft = (70, 800)
+
+
+# page.cropbox.lowerRight = (10, 20)
+# page.cropbox.lowerLeft = (30,
+#                           40)
+# page.cropbox.upperRight = (
+#     50, 60)
+# page.cropbox.upperLeft = (70,
+#                           80)
+
+output = PdfFileWriter()
+output.addPage(page)
+
+with open("out.pdf", "wb") as out_f:
+    output.write(out_f)
+
+with open("out.pdf", "rb") as f:
+    pdf = pdftotext.PDF(output)
+    print(pdf[0])
