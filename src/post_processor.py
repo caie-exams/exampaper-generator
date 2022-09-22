@@ -51,6 +51,7 @@ class PostProcessor():
 
             with open(DATA_DIR_PATH + "cached_pdf/" + hashed_filename + ".pdf", "wb") as cropped_pdffile_disk:
                 cropped_pdffile_disk.write(cropped_pdffile.getbuffer())
+                cropped_pdffile.close()
             cropped_image.save(DATA_DIR_PATH + "cached_image/" +
                                hashed_filename + ".png", format="png")
 

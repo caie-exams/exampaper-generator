@@ -27,12 +27,12 @@ def worker(pdfname):
 
     question_data = analyser.process(pdfname)
 
-    processed_question_data = [post_processor.process(
-        question) for question in question_data if question["text"] not in ["A", "B", "C", "D"]]
+    # processed_question_data = [post_processor.process(
+    # question) for question in question_data if question["text"] not in ["A", "B", "C", "D"]]
 
     print(pdfname + " is done")
 
-    return processed_question_data
+    return question_data
 
 
 def main():
