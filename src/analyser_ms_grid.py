@@ -42,8 +42,8 @@ class AnalyserMSGrid(AnalyserModel):
             if item[11] not in [x[11] for x in longest_increasing_sequence]:
                 longest_increasing_sequence.append(item)
 
-        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname, image_width, image_height,
-                                                          page_cnt, left_bound, right_bound, top_bound, bottom_bound)
+        question_list = AnalyserModel._generate_questions(
+            raw_ocr_data, longest_increasing_sequence, pdfname, page_cnt, image_width, image_height, left_bound, right_bound, top_bound, bottom_bound)
 
         return question_list
 
@@ -192,7 +192,7 @@ def main():
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
 
-    # print(done_data)
+    print(done_data)
 
     print("start deugging")
 
