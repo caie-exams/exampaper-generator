@@ -20,10 +20,10 @@ class AnalyserMSGrid(AnalyserModel):
         images = convert_from_path(pdfpath)
         page_cnt = len(images)
         images = list(map(AnalyserModel._image_preprocessing, images))
-        image_width, image_height = images[0].shape[1], images[0].shape[0]
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
+        image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_vert_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
@@ -42,7 +42,7 @@ class AnalyserMSGrid(AnalyserModel):
             if item[11] not in [x[11] for x in longest_increasing_sequence]:
                 longest_increasing_sequence.append(item)
 
-        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname, image_width, image_height
+        question_list = AnalyserModel._generate_questions(raw_ocr_data, longest_increasing_sequence, pdfname, image_width, image_height,
                                                           page_cnt, left_bound, right_bound, top_bound, bottom_bound)
 
         return question_list
@@ -131,16 +131,17 @@ class AnalyserMSGrid(AnalyserModel):
             for x in [x.tolist()
                       for x in contours[0]]:
                 new_x = [y[0] for y in x]
-                new_new_x = new_x.copy()
 
-                # absolute abuse of list comprehension,
-                # human do not try to understand
-                [[new_new_x.remove(new_x[k])
-                  for k in range(j + 1, len(new_x))
-                  if abs(new_x[k][0] - y[0]) < 5 and abs(new_x[k][1] - y[1]) < 5]
-                 for j, y in enumerate(new_x)]
+                # find two distinct coordinates, eliminate the others
 
-                result_contours.append(new_new_x)
+                coordA = new_x[0]
+                coordB = []
+                for j, y in enumerate(new_x):
+                    if abs(new_x[j][0] - coordA[0]) > 5 or abs(new_x[j][1] - coordA[1]) > 5:
+                        coordB = new_x[j]
+                        break
+
+                result_contours.append([coordA, coordB])
             return result_contours
 
         vert_contours = tidy_up_contours_data(vert_contours)
@@ -186,7 +187,7 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9701_w17_ms_22"
+    pdfname = "9701_w18_ms_53"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)

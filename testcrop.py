@@ -5,11 +5,14 @@
 pdfembed
 =========
 Embed a pdf inside another.
+
 Dependencies:
     - pdfrw_
     - Reportlab_
+
 .. _pdfrw: https://code.google.com/p/pdfrw/
 .. _Reportlab: http://www.reportlab.com/
+
 Based on: https://code.google.com/p/pdfrw/wiki/ExampleTools#Watermarking_PDFs
 """
 import os
@@ -28,7 +31,8 @@ from pdfrw.toreportlab import makerl
 
 logger = logging.getLogger('pdfcrop')
 handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
 
@@ -78,8 +82,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Crop pdf files')
     parser.add_argument('pdf', metavar='pdf', type=str, help='pdf to embed.')
-    parser.add_argument('-o', '--output', dest='output', type=str, help='output file')
-    parser.add_argument('-l', '--loglevel', dest='loglevel', default='info', type=str, help='Logging level')
+    parser.add_argument('-o', '--output', dest='output',
+                        type=str, help='output file')
+    parser.add_argument('-l', '--loglevel', dest='loglevel',
+                        default='info', type=str, help='Logging level')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), logging.INFO)
     logger.setLevel(loglevel)

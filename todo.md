@@ -10,8 +10,8 @@
 
 - [Add text to pdf using report lab](https://stackoverflow.com/questions/1180115/add-text-to-existing-pdf-using-python)
 - [Embed PDF in PDF using report lab](https://gist.github.com/marsam/7327216)
-- [pdftotext](https://pypi.org/project/pdftotext/)
-- [python file like objects](https://dev.to/bluepaperbirds/file-like-objects-in-python-1njf)
+
+- [Report Lab ](https://ithelp.ithome.com.tw/articles/10239020)
 
 1. get coords of pdf
 2. use pypdf2 to crop (mediabox) of pdf, save to memory using stringIO
@@ -25,6 +25,5 @@
 
 # minor improvements
 
-- add control mechanism
 - and multiprocessing for full core utilization
 - add config logging and debugging mechanism
