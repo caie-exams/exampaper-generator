@@ -40,8 +40,6 @@ class AnalyserFixedQN(AnalyserModel):
         #     images, tesseract_config="--psm 11 -l arial")
         # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
 
-        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
-
         question_num_data = AnalyserModel._locate_question_numbers(
             raw_ocr_data, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
 

@@ -58,7 +58,7 @@ def main():
 
     done_data = [data.get() for data in done_data_async]
 
-    with open(DEBUG_DIR_PATH + "json/" + "controller_dump.json") as debugfile:
+    with open(DEBUG_DIR_PATH + "json/" + "controller_dump.json", "w") as debugfile:
         debugfile.write(json.dumps(done_data))
 
 
