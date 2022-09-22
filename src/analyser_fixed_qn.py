@@ -35,7 +35,9 @@ class AnalyserFixedQN(AnalyserModel):
         page_cnt = len(images)
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, tesseract_config="--psm 11 -l arial")
+            images)
+        # raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
+        #     images, tesseract_config="--psm 11 -l arial")
         # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
 
         AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
