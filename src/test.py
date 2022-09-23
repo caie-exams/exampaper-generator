@@ -1,5 +1,6 @@
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 import pdftotext
+from model.analyser_model import *
 
 # pdf_file = PdfFileReader(
 #     open("/Users/justin/Codes/ocr/data/pdf/0620_s20_qp_21.pdf", "rb"))
@@ -32,6 +33,6 @@ import pdftotext
 # with open("out.pdf", "wb") as out_f:
 #     output.write(out_f)
 
-with open("/Users/justin/Codes/ocr/data/cached_pdf/9701_w18_ms_43_3_7.pdf", "rb") as f:
+with open("/Users/justin/Codes/ocr/data/cached_pdf/9701_w18_qp_35_3_11.pdf", "rb") as f:
     pdf = pdftotext.PDF(f)
-    print(pdf[0])
+    AnalyserModel.write_debugfile("EXTRACTED_TEXT", pdf[0])

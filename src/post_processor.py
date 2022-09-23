@@ -48,9 +48,10 @@ class PostProcessor():
                 location["left"], location["right"], location["top"], location["bottom"], upperright_x, upperright_y, orientation)
             cropped_pdffile = PostProcessor._crop_pdf_page(
                 original_pdffile, location["page_num"], pdf_coords["lower_left"], pdf_coords["lower_right"], pdf_coords["upper_left"], pdf_coords["upper_right"])
+            text += PostProcessor._extract_text_from_pdf(cropped_pdffile)
+
             cropped_image = PostProcessor._generate_image_from_pdf(
                 cropped_pdffile)
-            text += PostProcessor._extract_text_from_pdf(cropped_pdffile)
 
             hashed_filename = PostProcessor._generate_question_hash(
                 question["pdfname"], question["question_num"], location["page_num"])

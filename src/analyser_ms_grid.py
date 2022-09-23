@@ -21,9 +21,12 @@ class AnalyserMSGrid(AnalyserModel):
         page_cnt = len(images)
         images = list(map(AnalyserModel._image_preprocessing, images))
 
-        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
+        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
+            images, "-l arial")
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
+
+        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_vert_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
@@ -34,7 +37,14 @@ class AnalyserMSGrid(AnalyserModel):
         longest_non_decreasing_sequence = longest_increasing_subsequence(
             AnalyserModel._locate_question_numbers(
                 raw_ocr_data, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound),
-            False, lambda x: int(x[11]) * 10000 + x[1] * 100 + x[7] * 1)
+            False, lambda x: int(x[11]) * 1e8 + x[1] * 1e5 + x[7] * 1)
+
+        # debug
+        # AnalyserModel.write_debugfile(
+        #     "question_numbers", AnalyserModel._locate_question_numbers(
+        #         raw_ocr_data, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound))
+        # AnalyserModel.write_debugfile(
+        #     "longest_non_decreasing_sequence", longest_non_decreasing_sequence)
 
         # for each duplicate question number only save the first copy
         longest_increasing_sequence = []
@@ -187,12 +197,12 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9701_w18_ms_43"
+    pdfname = "9701_w18_ms_21"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
 
-    print(done_data)
+    # print(done_data)
 
     print("start deugging")
 
