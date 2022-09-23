@@ -28,9 +28,14 @@ class AnalyserMSGrid(AnalyserModel):
 
         AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
 
-        left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_vert_boundaries(
+        left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))
-        bottom_bound = max([AnalyserMSGrid._find_ms_content_vert_boundaries(
+
+        # for top bound and bottom bound may vary, so get the lim is safe
+        top_bound = min([AnalyserMSGrid._find_ms_content_boundaries(
+            images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[2]]
+            for idx in range(start_idx, end_idx + 1))[0]
+        bottom_bound = max([AnalyserMSGrid._find_ms_content_boundaries(
             images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[3]]
             for idx in range(start_idx, end_idx + 1))[0]
 
@@ -118,7 +123,7 @@ class AnalyserMSGrid(AnalyserModel):
         return dilated_row, dilated_col
 
     @ staticmethod
-    def _find_ms_content_vert_boundaries(image, raw_ocr_data):
+    def _find_ms_content_boundaries(image, raw_ocr_data):
         """
         use vertical splits and question header to find boundaries
         return contours and hierarchy of the image
@@ -197,7 +202,7 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9701_w18_ms_21"
+    pdfname = "9701_w18_ms_33"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
