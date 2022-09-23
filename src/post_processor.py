@@ -6,13 +6,15 @@ import pdf2image
 import hashlib
 import PIL
 from io import BytesIO
+from decimal import Decimal
 
 
 class PostProcessor():
 
     """
     input question data,
-    spit out cropped pdf, cropped image, and improve text accuracy for questions
+    spit out cropped pdf, cropped image, and improve text accuracy for questions  
+    plus it detects certain excessive content (like periodic table) and kick them out 
     """
 
     # @ staticmethod
@@ -30,18 +32,26 @@ class PostProcessor():
     def process(self, question):
         original_pdffile = PostProcessor._get_pdf_file(question["pdfname"])
         original_pdffile_reader = PyPDF2.PdfReader(original_pdffile)
-        pdf_width = original_pdffile_reader.pages[0].mediaBox.getWidth()
-        pdf_height = original_pdffile_reader.pages[0].mediaBox.getHeight()
+
+        print(question["pdfname"])
 
         text = ""
         for location in question["location"]:
+            upperright_x = original_pdffile_reader.pages[location["page_num"]].mediaBox.getUpperRight_x(
+            )
+            upperright_y = original_pdffile_reader.pages[location["page_num"]].mediaBox.getUpperRight_y(
+            )
+            orientation = original_pdffile_reader.getPage(
+                location["page_num"]).get('/Rotate')
+
             pdf_coords = PostProcessor._image_coords_to_pdf_coords(
-                location["left"], location["right"], location["top"], location["bottom"], pdf_width, pdf_height)
+                location["left"], location["right"], location["top"], location["bottom"], upperright_x, upperright_y, orientation)
             cropped_pdffile = PostProcessor._crop_pdf_page(
                 original_pdffile, location["page_num"], pdf_coords["lower_left"], pdf_coords["lower_right"], pdf_coords["upper_left"], pdf_coords["upper_right"])
             cropped_image = PostProcessor._generate_image_from_pdf(
                 cropped_pdffile)
             text += PostProcessor._extract_text_from_pdf(cropped_pdffile)
+
             hashed_filename = PostProcessor._generate_question_hash(
                 question["pdfname"], question["question_num"], location["page_num"])
             location["hashed_filename"] = hashed_filename
@@ -50,6 +60,7 @@ class PostProcessor():
             # it's called cached because you can regenerate them anytime
 
             with open(DATA_DIR_PATH + "cached_pdf/" + hashed_filename + ".pdf", "wb") as cropped_pdffile_disk:
+                cropped_pdffile.seek(0)
                 cropped_pdffile_disk.write(cropped_pdffile.getbuffer())
                 cropped_pdffile.close()
             cropped_image.save(DATA_DIR_PATH + "cached_image/" +
@@ -66,7 +77,7 @@ class PostProcessor():
         return pdffile
 
     @ staticmethod
-    def _image_coords_to_pdf_coords(left, right, top, bottom, pdf_width, pdf_height):
+    def _image_coords_to_pdf_coords(left, right, top, bottom, upperright_x, upperright_y, orientation=None) -> dict:
         """
         input locaiton percentage from question data, output coords in pdf
         """
@@ -74,10 +85,23 @@ class PostProcessor():
         # left right top and bottom are all in percentage
         # image coords start from left top, pdf coords starts from left bottom
 
-        return {"lower_left": (int(pdf_width/100 * left), int(pdf_height/100 * (100-bottom))),
-                "lower_right": (int(pdf_width/100 * right), int(pdf_height/100 * (100-bottom))),
-                "upper_left": (int(pdf_width/100 * left), int(pdf_height/100 * (100-top))),
-                "upper_right": (int(pdf_width/100 * right), int(pdf_height/100 * (100-top)))}
+        # if the page is landscape, the coords of pdf stays portrait
+
+        if left <= 0 or left > 1 \
+                or right <= 0 or right > 1 \
+                or top <= 0 or top > 1 \
+                or bottom <= 0 or bottom > 1:
+            raise Exception("coords not correct")
+
+        if orientation == 90:
+            top, bottom, left, right = left, right, bottom, top
+        if orientation == 270:
+            top, bottom, left, right = right, left, top, bottom
+
+        return {"lower_left": (upperright_x * Decimal(left), upperright_y * Decimal(1-bottom)),
+                "lower_right": (int(upperright_x * Decimal(right)), upperright_y * Decimal(1-bottom)),
+                "upper_left": (upperright_x * Decimal(left), upperright_y * Decimal(1-top)),
+                "upper_right": (upperright_x * Decimal(right), upperright_y * Decimal(1-top))}
 
     @ staticmethod
     def _crop_pdf_page(pdffile,  pagenum: int, lower_left: tuple, lower_right: tuple, upper_left: tuple, upper_right: tuple) -> BytesIO:
@@ -91,6 +115,9 @@ class PostProcessor():
         page.mediaBox.lower_right = lower_right
         page.mediaBox.upper_left = upper_left
         page.mediaBox.upper_right = upper_right
+
+        # page.mediaBox.upper_left = upper_left
+        # print(page.mediaBox.lower_right[0], page.mediaBox.lower_right[1])
 
         output_writer = PyPDF2.PdfFileWriter()
         output_writer.add_page(page)
@@ -117,17 +144,22 @@ class PostProcessor():
         """
         use pdfname, question_num and page_num you can locate a question!
         """
-        hasher = hashlib.sha256()
-        key = str(pdfname) + str(question_num) + str(page_num)
-        hasher.update(key.encode("utf-8"))
-        return hasher.hexdigest()[:16]
+        # hasher = hashlib.sha256()
+        # key = str(pdfname) + str(question_num) + str(page_num)
+        # hasher.update(key.encode("utf-8"))
+        # return hasher.hexdigest()[:16]
+
+        # the fuck, no need to hash
+        return "_".join([pdfname, str(question_num), str(page_num)])
 
 
 def main():
     postprocessor = PostProcessor()
-    done_data = postprocessor.process({'pdfname': '9702_s15_ms_22', 'question_num': 1, 'location': [
-        {'page_num': 1, 'left': 10, 'right': 93, 'top': 9, 'bottom': 44}], 'text': None})
-    print(done_data)
+    DATA = [{'pdfname': '9701_w18_ms_43', 'question_num': 3, 'location': [{'page_num': 7, 'left': 0.14365113296280463,
+                                                                           'right': 0.9247541684480547, 'top': 0.12462189957652753, 'bottom': 0.34180278281911675}], 'text': None}]
+    for data in DATA:
+        done_data = postprocessor.process(data)
+        # print(done_data)
 
 
 if __name__ == "__main__":

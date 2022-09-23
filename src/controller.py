@@ -30,11 +30,8 @@ def worker(pdfname):
     processed_question_data = []
     for question in question_data:
         if question["text"] not in ["A", "B", "C", "D"]:
-            try:
-                processed_question_data.append(
-                    post_processor.process(question))
-            except:
-                print(question)
+            processed_question_data.append(
+                post_processor.process(question))
 
     print(pdfname + " is done")
 

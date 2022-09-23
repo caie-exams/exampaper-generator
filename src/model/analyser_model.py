@@ -3,6 +3,7 @@ from configuration import *
 import cv2
 import pytesseract
 import numpy as np
+from math import ceil, floor
 from pdf2image import convert_from_path
 
 
@@ -179,10 +180,10 @@ class AnalyserModel:
         question_num         int               number of question
         location             list[dict]
             page_num         int               number of page
-            left             int               percentage
-            right            int               percentage
-            top              int               percentage
-            bottom           int               percentage
+            left             float               percentage
+            right            float               percentage
+            top              float               percentage
+            bottom           float               percentage
             hashed_filename  str               hashed filename of cropped images/pdfs
         text                 str               answer of mcq or text of question
 
@@ -250,8 +251,8 @@ class AnalyserModel:
                         ))) == 0:
                     break
 
-                coords.append({"page_num": page_idx, "left": int(left_bound / image_width * 100), "right": int(right_bound / image_width * 100),
-                               "top": int(top_coord / image_height * 100), "bottom": int(bottom_coord / image_height * 100)})
+                coords.append({"page_num": page_idx, "left": left_bound / image_width, "right": right_bound / image_width,
+                               "top": top_coord / image_height, "bottom": bottom_coord / image_height})
 
                 # text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
                 # data_on_page, left_bound, right_bound, top_coord, bottom_coord))
@@ -260,7 +261,7 @@ class AnalyserModel:
                 pdfname, int(item[11]), coords))
         return question_list
 
-    @staticmethod
+    @ staticmethod
     def debug(question_list, pdfname):
         """
         debug is what is sounds like
@@ -285,20 +286,16 @@ class AnalyserModel:
             # new_image = cv2.line(new_image, (1550, 0),
             #                      (1550, new_image.shape[0]), (0, 100, 0), 2)
 
-            DATA = []
-
-            for item in DATA:
-                if item[1] == idx:
-                    new_image = cv2.rectangle(
-                        new_image, (item[6], item[7]), (item[6] + item[8], item[7] + item[9]), (0, 0, 0), 2)
-
             # print questions
             for item in question_list:
                 for question in item["location"]:
 
                     if question["page_num"] == idx:
                         new_image = cv2.rectangle(
-                            new_image, (question["left"], question["top"]), (question["right"], question["bottom"]), (0, 0, 0), 2)
+                            new_image, (int(question["left"] * new_image.shape[1]),
+                                        int(question["top"] * new_image.shape[0])),
+                            (int(question["right"] * new_image.shape[1]),
+                             int(question["bottom"] * new_image.shape[0])), (0, 0, 0), 2)
                         # new_image = cv2.putText(
                         #     new_image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
 
