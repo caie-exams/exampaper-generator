@@ -17,18 +17,6 @@ class PostProcessor():
     plus it detects certain excessive content (like periodic table) and kick them out 
     """
 
-    # @ staticmethod
-    # def _clean_text(text: str) -> str:
-    #     # replace newline and tab with space
-    #     text = text.replace("\n", " ")
-    #     text = text.replace("\t", " ")
-    #     # remove multiple spaces
-    #     text = " ".join(text.split())
-    #     # strip leading spaces
-    #     text = text.strip()
-
-    #     return text
-
     def process(self, question):
         original_pdffile = PostProcessor._get_pdf_file(question["pdfname"])
         original_pdffile_reader = PyPDF2.PdfReader(original_pdffile)

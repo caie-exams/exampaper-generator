@@ -3,17 +3,31 @@ from configuration import *
 import cv2
 import pytesseract
 import numpy as np
+import re
 from math import ceil, floor
 from pdf2image import convert_from_path
+from fuzzysearch import find_near_matches
+from func_timeout import func_timeout, FunctionTimedOut
 
 
 class AnalyserModel:
+
+    BREAK_POINT_TEXT = "@@BREAKPOINT@@"
 
     """
     stores staticmethods that are commonly used by analysers
 
     this class is default for analysing quesiton papers, can be inherited
     """
+
+    @staticmethod
+    def _load_config(config_name: str) -> list:
+        """
+        input config name (without json) and return the config
+        """
+        config_path = CONFIG_DIR_PATH + config_name + ".json"
+        with open(config_path, "r") as config_file:
+            return json.loads(config_file.read())
 
     @ staticmethod
     def _scan_to_get_raw_ocr_data(images, tesseract_config=None):
@@ -25,7 +39,7 @@ class AnalyserModel:
 
         | num     | data        |
         | ------- | ------      |
-        | 0       | leve        |
+        | 0       | level       |
         | 1       | page_num    |
         | 2       | block_num   |
         | 3       | par_num     |
@@ -56,7 +70,7 @@ class AnalyserModel:
                 item_data[1] = idx
                 raw_ocr_data.append(item_data)
 
-        return raw_ocr_data
+        return AnalyserModel._raw_ocr_data_filter(raw_ocr_data)
 
     @staticmethod
     def _locate_question_numbers(raw_ocr_data, start_page, end_page, left_bound, right_bound, top_bound, bottom_bound):
@@ -113,14 +127,11 @@ class AnalyserModel:
         return raw ocr data in the box
         """
 
-        limited_data = []
-        for item in raw_ocr_data:
-            if (left == -1 or item[6] >= left) \
-                    and (right == -1 or (item[6] + item[8]) <= right) \
-                and (top == -1 or item[7] >= top) \
-                    and (bottom == -1 or (item[7] + item[9]) <= bottom):
-                limited_data.append(item)
-        return limited_data
+        return [item for item in raw_ocr_data
+                if (left == -1 or item[6] >= left)
+                and (right == -1 or (item[6] + item[8]) <= right)
+                and (top == -1 or item[7] >= top)
+                and (bottom == -1 or (item[7] + item[9]) <= bottom)]
 
     @ staticmethod
     def _ocr_data_on_page(raw_ocr_data, pagenum):
@@ -129,11 +140,7 @@ class AnalyserModel:
         returns ocr data on specific pdf page
         """
 
-        limited_data = []
-        for item in raw_ocr_data:
-            if item[1] == pagenum:
-                limited_data.append(item)
-        return limited_data
+        return [item for item in raw_ocr_data if item[1] == pagenum]
 
     @ staticmethod
     def _merge_text(raw_ocr_data):
@@ -142,10 +149,7 @@ class AnalyserModel:
         return merged text in raw ocr data
         """
 
-        text = ""
-        for word in raw_ocr_data:
-            text += word[11] + " "
-        return text
+        return " ".join([word[11] for word in raw_ocr_data])
 
     @ staticmethod
     def _last_character_bottom_coord(raw_ocr_data):
@@ -193,7 +197,77 @@ class AnalyserModel:
         return {"pdfname": pdfname,
                 "question_num": question_number, "location": location, "text": text}
 
+    @ staticmethod
+    def _clean_text(text: str) -> str:
+        # replace newline and tab with space
+        text = text.replace("\n", " ")
+        text = text.replace("\t", " ")
+        # remove multiple spaces
+        text = " ".join(text.split())
+        # strip leading spaces
+        text = text.strip()
+
+        return text
+
     @staticmethod
+    def _ocr_data_matches_string(raw_ocr_data: list, target_str: str) -> list:
+        """
+        takes ocr data, return the portion that fuzzy matches a string
+        """
+
+        # merge ocr data to text, and map the relation ship
+
+        ocr_data_merged = ""
+        ocr_data_text_map = {}
+
+        for idx, data in enumerate(raw_ocr_data):
+            start_idx = len(ocr_data_merged)
+            ocr_data_merged += data[11] + " "
+            end_idx = len(ocr_data_merged)
+
+            for i in range(start_idx, end_idx):
+                ocr_data_text_map[i] = idx
+
+        try:
+            matchs = func_timeout(1, find_near_matches,
+                                  args=(target_str, ocr_data_merged), kwargs={"max_l_dist": int(len(target_str) * 0.2)})
+        except FunctionTimedOut:
+            return []
+
+        if len(matchs) == 0:
+            return []
+
+        matched_ocr_data = []
+        for match in matchs:
+            prev_ocr_idx = -1
+            for idx in range(match.start, match.end):
+                ocr_idx = ocr_data_text_map[idx]
+                if ocr_idx != prev_ocr_idx:
+                    matched_ocr_data.append(raw_ocr_data[ocr_idx])
+                prev_ocr_idx = ocr_idx
+
+        # print(matched_ocr_data)
+        return matched_ocr_data
+
+    @staticmethod
+    def _add_break_point(raw_ocr_data, unwanted_content_list, start_idx, end_idx):
+        """
+        input raw ocr data and function specific config
+        """
+
+        for page_idx in range(start_idx, end_idx + 1):
+            ocr_data_in_range_on_page = AnalyserModel._ocr_data_on_page(
+                raw_ocr_data, page_idx)
+            for unwanted_content in unwanted_content_list:
+                matched_ocr_data = AnalyserModel._ocr_data_matches_string(
+                    ocr_data_in_range_on_page, unwanted_content)
+                if len(matched_ocr_data) != 0:
+                    raw_ocr_data[raw_ocr_data.index(
+                        matched_ocr_data[0])][11] = AnalyserModel.BREAK_POINT_TEXT
+
+        return raw_ocr_data
+
+    @ staticmethod
     def _generate_questions(raw_ocr_data, question_number_sequence, pdfname, page_cnt, image_width, image_height,
                             left_bound, right_bound, top_bound, bottom_bound):
         """
@@ -221,7 +295,12 @@ class AnalyserModel:
             else:
                 page_upper_bound = question_number_sequence[idx + 1][1] + 1
 
+            met_break_point = False
             for page_idx in range(item[1], page_upper_bound):
+
+                # had met break point before
+                if met_break_point:
+                    break
 
                 # page is blank
                 if AnalyserModel._is_blank_page(AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx)):
@@ -230,13 +309,13 @@ class AnalyserModel:
                 data_on_page = AnalyserModel._ocr_data_in_range(
                     AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx), left_bound, right_bound, top_bound, bottom_bound)
 
-                # first question is on the page
+                # question number locates on the page
                 if page_idx == item[1]:
                     top_coord = item[7]
                 else:
                     top_coord = top_bound
 
-                # last question is on the page
+                # next question is on the page
                 if idx != len(question_number_sequence) - 1 and \
                         page_idx == question_number_sequence[idx + 1][1]:
                     bottom_coord = question_number_sequence[idx + 1][7]
@@ -244,25 +323,37 @@ class AnalyserModel:
                     bottom_coord = AnalyserModel._last_character_bottom_coord(
                         data_on_page)
 
-                # if the boxed area is empty
-                if len(AnalyserModel._raw_ocr_data_filter
+                # detect break points
+                for data in AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx):
+                    if data[11] == AnalyserModel.BREAK_POINT_TEXT \
+                        and (data[1] != item[1]
+                             or (data[1] == item[1]
+                                 and data[7] > item[7] + item[9])):
+                        met_break_point = True
+                        bottom_coord = AnalyserModel._last_character_bottom_coord(
+                            AnalyserModel._ocr_data_in_range(data_on_page, -1, -1, -1, data[7] - 1))
+                        break
+
+                # if the boxed area is empty or boxed area does not exist
+                if bottom_coord <= top_coord or \
+                    len(AnalyserModel._raw_ocr_data_filter
                         (AnalyserModel._ocr_data_in_range(
-                        data_on_page, left_bound, right_bound, top_coord, bottom_coord
+                            data_on_page, left_bound, right_bound, top_coord, bottom_coord
                         ))) == 0:
                     break
 
                 coords.append({"page_num": page_idx, "left": left_bound / image_width, "right": right_bound / image_width,
                                "top": top_coord / image_height, "bottom": bottom_coord / image_height})
 
-                # text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
-                # data_on_page, left_bound, right_bound, top_coord, bottom_coord))
+                text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
+                    data_on_page, left_bound, right_bound, top_coord, bottom_coord))
 
             question_list.append(AnalyserModel._make_question(
-                pdfname, int(item[11]), coords))
+                pdfname, int(item[11]), coords, text))
         return question_list
 
     @ staticmethod
-    def debug(question_list, pdfname):
+    def debug(question_list, pdfname, draw_box=True):
         """
         debug is what is sounds like
         """
@@ -291,11 +382,12 @@ class AnalyserModel:
                 for question in item["location"]:
 
                     if question["page_num"] == idx:
-                        new_image = cv2.rectangle(
-                            new_image, (int(question["left"] * new_image.shape[1]),
-                                        int(question["top"] * new_image.shape[0])),
-                            (int(question["right"] * new_image.shape[1]),
-                             int(question["bottom"] * new_image.shape[0])), (0, 0, 0), 2)
+                        if draw_box:
+                            new_image = cv2.rectangle(
+                                new_image, (int(question["left"] * new_image.shape[1]),
+                                            int(question["top"] * new_image.shape[0])),
+                                (int(question["right"] * new_image.shape[1]),
+                                    int(question["bottom"] * new_image.shape[0])), (0, 0, 0), 2)
                         # new_image = cv2.putText(
                         #     new_image, item["text"], (question["left"], question["bottom"]),  cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 100, 100), 2)
 
@@ -306,7 +398,7 @@ class AnalyserModel:
             # write question data
             AnalyserModel.write_debugfile("analyser_result", question_list)
 
-    @staticmethod
+    @ staticmethod
     def write_debugfile(filename, data):
         with open(DEBUG_DIR_PATH + "json/" + str(filename) + ".json", "w") as debugfile:
             debugfile.write(json.dumps(data))

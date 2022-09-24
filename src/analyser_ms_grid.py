@@ -1,6 +1,7 @@
 from model.analyser_model import *
 
 import cv2
+import re
 from pdf2image import convert_from_path
 from longest_increasing_subsequence import longest_increasing_subsequence
 from fuzzy_match import algorithims
@@ -15,6 +16,10 @@ class AnalyserMSGrid(AnalyserModel):
     """
 
     def process(self, pdfname):
+
+        # load config
+        config = AnalyserModel._load_config(pdfname.split("_")[0])[
+            "analyser"]
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
@@ -38,6 +43,16 @@ class AnalyserMSGrid(AnalyserModel):
         bottom_bound = max([AnalyserMSGrid._find_ms_content_boundaries(
             images[idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  idx))[3]]
             for idx in range(start_idx, end_idx + 1))[0]
+
+        # eliminate unwanted content for each page
+        unwanted_content_list = []
+        for pdfname_regex in config["unwanted_content"]:
+            if re.match(pdfname_regex, pdfname) is not None:
+                unwanted_content_list += config["unwanted_content"][pdfname_regex]
+        raw_ocr_data = AnalyserModel._add_break_point(
+            raw_ocr_data, unwanted_content_list, start_idx=start_idx, end_idx=end_idx)
+
+        # find the longest non decreasing sequence
 
         longest_non_decreasing_sequence = longest_increasing_subsequence(
             AnalyserModel._locate_question_numbers(
@@ -211,7 +226,7 @@ def main():
 
     print("start deugging")
 
-    AnalyserModel.debug(done_data, pdfname)
+    AnalyserModel.debug(done_data, pdfname, draw_box=True)
 
 
 if __name__ == "__main__":

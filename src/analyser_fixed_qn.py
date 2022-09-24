@@ -23,7 +23,9 @@ class AnalyserFixedQN(AnalyserModel):
 
     def process(self, pdfname):
 
-        # self.config = CONFIG.get_config(pdfname)
+        # load config
+        config = AnalyserModel._load_config(pdfname.split("_")[0])[
+            "analyser"]
 
         CONTENT_AREA_BOUND = [175, 1550, 150, 2210]
 
@@ -34,10 +36,21 @@ class AnalyserFixedQN(AnalyserModel):
 
         page_cnt = len(images)
 
-        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(images)
-        # raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-        #     images, tesseract_config="--psm 11 -l arial")
-        # raw_ocr_data = self.raw_ocr_data_filter(raw_ocr_data)
+        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
+            images, "-l arial")
+
+        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
+
+        # eliminate unwanted content for each page
+        unwanted_content_list = []
+        for pdfname_regex in config["unwanted_content"]:
+            if re.match(pdfname_regex, pdfname) is not None:
+                unwanted_content_list += config["unwanted_content"][pdfname_regex]
+        raw_ocr_data = AnalyserModel._add_break_point(
+            raw_ocr_data, unwanted_content_list, start_idx=0, end_idx=page_cnt - 1)
+
+        AnalyserModel.write_debugfile("raw_ocr_data_", raw_ocr_data)
+        # find questiom num data
 
         question_num_data = AnalyserModel._locate_question_numbers(
             raw_ocr_data, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
@@ -48,18 +61,18 @@ class AnalyserFixedQN(AnalyserModel):
         #     raw_ocr_data, longest_sequence,  pdfname)
         question_list = AnalyserModel._generate_questions(
             raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND)
+
+        AnalyserModel.write_debugfile("question_list", question_list)
         return question_list
 
 
 # main is used for debug
 def main():
 
-    pdfname = "9702_s15_ms_22"
+    pdfname = "9701_w18_qp_13"
 
     analyser = AnalyserFixedQN()
     done_data = analyser.process(pdfname)
-
-    print(done_data)
 
     # print(done_data)
 
