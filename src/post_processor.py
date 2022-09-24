@@ -33,8 +33,6 @@ class PostProcessor():
         original_pdffile = PostProcessor._get_pdf_file(question["pdfname"])
         original_pdffile_reader = PyPDF2.PdfReader(original_pdffile)
 
-        print(question["pdfname"])
-
         text = ""
         for location in question["location"]:
             upperright_x = original_pdffile_reader.pages[location["page_num"]].mediaBox.getUpperRight_x(

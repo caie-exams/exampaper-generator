@@ -46,7 +46,7 @@ class AnalyserFixedQN(AnalyserModel):
             question_num_data, False, lambda x: int(x[11]))
         # question_list = self._generate_mcq(
         #     raw_ocr_data, longest_sequence,  pdfname)
-        question_list = self._generate_questions(
+        question_list = AnalyserModel._generate_questions(
             raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND)
         return question_list
 

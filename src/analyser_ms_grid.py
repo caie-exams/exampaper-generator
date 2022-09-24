@@ -202,7 +202,7 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9701_w18_ms_33"
+    pdfname = "9701_w18_ms_36"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
