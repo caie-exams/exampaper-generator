@@ -65,55 +65,27 @@ class AnalyserFixedQN(AnalyserModel):
 # main is used for debug
 def main():
 
-    pdfname = "9701_w18_qp_22"
+    pdfname = "9701_w18_qp_34"
     # 34
 
-    # analyser = AnalyserFixedQN()
-    # print("first scan!")
-    # done_data1 = analyser.process(pdfname, "-l arial --psm 3")
-    # print("second scan!")
-    # done_data2 = analyser.process(pdfname, "-l arial --psm 11")
+    analyser = AnalyserFixedQN()
+    print("first scan!")
+    done_data1 = analyser.process(pdfname, "-l arial --psm 3")
+    print("second scan!")
+    done_data2 = analyser.process(pdfname, "-l arial --psm 12")
 
-    # AnalyserModel.write_debugfile("done_data1", done_data1)
-    # AnalyserModel.write_debugfile("done_data2", done_data2)
-
-    done_data1 = AnalyserModel.load_debugfile("done_data1")
-    done_data2 = AnalyserModel.load_debugfile("done_data2")
-
-    combined_data = sorted(done_data1 + done_data2,
-                           key=lambda x: x["question_num"] * 100 + len(x["location"]))
-
-    done_data = []
-
-    i = 0
-    while i < len(combined_data):
-        all_same_question_list = []
-        j = i
-        while j < len(combined_data):
-            if combined_data[j]["question_num"] == combined_data[i]["question_num"]:
-                all_same_question_list.append(combined_data[j])
-                j = j + 1
-            else:
+    done_data = done_data2
+    for data1 in done_data1:
+        found = False
+        for data2 in done_data2:
+            if data2["question_num"] == data1["question_num"]:
+                found = True
                 break
 
-        location_list = []
-        [location_list.extend(question["location"])
-         for question in all_same_question_list]
+        if not found:
+            done_data.append(data1)
 
-        sorted_location_list = sorted(
-            location_list, key=lambda x: x["page_num"] * 1e8 - (x["bottom"] - x["top"]) * 100)
-
-        print(all_same_question_list)
-        print(sorted_location_list)
-        print("===============")
-
-        data = combined_data[i]
-        data["location"] = [sorted_location_list[k] for k in range(0, len(sorted_location_list))
-                            if k == 0 or sorted_location_list[k]["page_num"] != sorted_location_list[k-1]["page_num"]]
-
-        done_data.append(data)
-
-        i = j
+    done_data.sort(key=lambda x: x["question_num"])
 
     print("start deugging")
 
