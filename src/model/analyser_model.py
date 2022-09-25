@@ -250,17 +250,21 @@ class AnalyserModel:
         return matched_ocr_data
 
     @staticmethod
-    def _add_break_point(raw_ocr_data, unwanted_content_list, start_idx, end_idx):
+    def _add_break_point(raw_ocr_data, unwanted_content_list, start_idx, end_idx, left, right, top, bottom):
         """
         input raw ocr data and function specific config
         """
 
         for page_idx in range(start_idx, end_idx + 1):
-            ocr_data_in_range_on_page = AnalyserModel._ocr_data_on_page(
+            ocr_data_on_page = AnalyserModel._ocr_data_on_page(
                 raw_ocr_data, page_idx)
             for unwanted_content in unwanted_content_list:
-                matched_ocr_data = AnalyserModel._ocr_data_matches_string(
-                    ocr_data_in_range_on_page, unwanted_content)
+                if unwanted_content[1] == "ALL":
+                    matched_ocr_data = AnalyserModel._ocr_data_matches_string(
+                        ocr_data_on_page, unwanted_content[0])
+                if unwanted_content[1] == "BOX":
+                    matched_ocr_data = AnalyserModel._ocr_data_matches_string(
+                        AnalyserModel._ocr_data_in_range(ocr_data_on_page, left, right, top, bottom), unwanted_content[0])
                 if len(matched_ocr_data) != 0:
                     raw_ocr_data[raw_ocr_data.index(
                         matched_ocr_data[0])][11] = AnalyserModel.BREAK_POINT_TEXT
@@ -302,9 +306,9 @@ class AnalyserModel:
                 if met_break_point:
                     break
 
-                # page is blank
-                if AnalyserModel._is_blank_page(AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx)):
-                    break
+                # # page is blank
+                # if AnalyserModel._is_blank_page(AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx)):
+                #     break
 
                 data_on_page = AnalyserModel._ocr_data_in_range(
                     AnalyserModel._ocr_data_on_page(raw_ocr_data, page_idx), left_bound, right_bound, top_bound, bottom_bound)
@@ -398,7 +402,12 @@ class AnalyserModel:
             # write question data
             AnalyserModel.write_debugfile("analyser_result", question_list)
 
-    @ staticmethod
+    @staticmethod
     def write_debugfile(filename, data):
         with open(DEBUG_DIR_PATH + "json/" + str(filename) + ".json", "w") as debugfile:
             debugfile.write(json.dumps(data))
+
+    @staticmethod
+    def load_debugfile(filename):
+        with open(DEBUG_DIR_PATH + "json/" + str(filename) + ".json", "r") as debugfile:
+            return json.loads(debugfile.read())

@@ -21,7 +21,7 @@ class AnalyserFixedQN(AnalyserModel):
     relation is one-to-many
     """
 
-    def process(self, pdfname):
+    def process(self, pdfname, tesseract_config="--oem 0"):
 
         # load config
         config = AnalyserModel._load_config(pdfname.split("_")[0])[
@@ -37,9 +37,7 @@ class AnalyserFixedQN(AnalyserModel):
         page_cnt = len(images)
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, "-l arial")
-
-        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
+            images, tesseract_config)
 
         # eliminate unwanted content for each page
         unwanted_content_list = []
@@ -47,11 +45,9 @@ class AnalyserFixedQN(AnalyserModel):
             if re.match(pdfname_regex, pdfname) is not None:
                 unwanted_content_list += config["unwanted_content"][pdfname_regex]
         raw_ocr_data = AnalyserModel._add_break_point(
-            raw_ocr_data, unwanted_content_list, start_idx=0, end_idx=page_cnt - 1)
+            raw_ocr_data, unwanted_content_list, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
 
-        AnalyserModel.write_debugfile("raw_ocr_data_", raw_ocr_data)
         # find questiom num data
-
         question_num_data = AnalyserModel._locate_question_numbers(
             raw_ocr_data, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
 
@@ -69,12 +65,55 @@ class AnalyserFixedQN(AnalyserModel):
 # main is used for debug
 def main():
 
-    pdfname = "9701_w18_qp_13"
+    pdfname = "9701_w18_qp_22"
+    # 34
 
-    analyser = AnalyserFixedQN()
-    done_data = analyser.process(pdfname)
+    # analyser = AnalyserFixedQN()
+    # print("first scan!")
+    # done_data1 = analyser.process(pdfname, "-l arial --psm 3")
+    # print("second scan!")
+    # done_data2 = analyser.process(pdfname, "-l arial --psm 11")
 
-    # print(done_data)
+    # AnalyserModel.write_debugfile("done_data1", done_data1)
+    # AnalyserModel.write_debugfile("done_data2", done_data2)
+
+    done_data1 = AnalyserModel.load_debugfile("done_data1")
+    done_data2 = AnalyserModel.load_debugfile("done_data2")
+
+    combined_data = sorted(done_data1 + done_data2,
+                           key=lambda x: x["question_num"] * 100 + len(x["location"]))
+
+    done_data = []
+
+    i = 0
+    while i < len(combined_data):
+        all_same_question_list = []
+        j = i
+        while j < len(combined_data):
+            if combined_data[j]["question_num"] == combined_data[i]["question_num"]:
+                all_same_question_list.append(combined_data[j])
+                j = j + 1
+            else:
+                break
+
+        location_list = []
+        [location_list.extend(question["location"])
+         for question in all_same_question_list]
+
+        sorted_location_list = sorted(
+            location_list, key=lambda x: x["page_num"] * 1e8 - (x["bottom"] - x["top"]) * 100)
+
+        print(all_same_question_list)
+        print(sorted_location_list)
+        print("===============")
+
+        data = combined_data[i]
+        data["location"] = [sorted_location_list[k] for k in range(0, len(sorted_location_list))
+                            if k == 0 or sorted_location_list[k]["page_num"] != sorted_location_list[k-1]["page_num"]]
+
+        done_data.append(data)
+
+        i = j
 
     print("start deugging")
 

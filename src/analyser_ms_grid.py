@@ -15,7 +15,7 @@ class AnalyserMSGrid(AnalyserModel):
     - are not mcq
     """
 
-    def process(self, pdfname):
+    def process(self, pdfname, tesseract_config="--oem 0"):
 
         # load config
         config = AnalyserModel._load_config(pdfname.split("_")[0])[
@@ -27,7 +27,7 @@ class AnalyserMSGrid(AnalyserModel):
         images = list(map(AnalyserModel._image_preprocessing, images))
 
         raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, "-l arial")
+            images, tesseract_config)
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
 
@@ -50,7 +50,7 @@ class AnalyserMSGrid(AnalyserModel):
             if re.match(pdfname_regex, pdfname) is not None:
                 unwanted_content_list += config["unwanted_content"][pdfname_regex]
         raw_ocr_data = AnalyserModel._add_break_point(
-            raw_ocr_data, unwanted_content_list, start_idx=start_idx, end_idx=end_idx)
+            raw_ocr_data, unwanted_content_list, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound)
 
         # find the longest non decreasing sequence
 

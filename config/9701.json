@@ -4,14 +4,14 @@
   },
   "analyser": {
     "unwanted_content": {
-      "9701_.*_ms_[^1]*": ["Question Answer Marks"],
+      "9701_.*_ms_[^1]*": [["Answer Marks", "BOX"]],
+      "9701_.*_qp_[^1]*": [["BLANK PAGE", "ALL"]],
       "9701_.*_qp_1*": [
-        "Section B",
-        "Permission to reproduce",
-        "The response A"
+        ["Section B", "ALL"],
+        ["Permission to reproduce", "ALL"],
+        ["The response A", "ALL"]
       ]
     }
   },
-  "categoriser": {},
   "post_processor": {}
 }
