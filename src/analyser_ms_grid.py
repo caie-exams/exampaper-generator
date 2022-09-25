@@ -15,7 +15,7 @@ class AnalyserMSGrid(AnalyserModel):
     - are not mcq
     """
 
-    def process(self, pdfname, tesseract_config="--oem 0"):
+    def process(self, pdfname, tesseract_config=None):
 
         # load config
         config = AnalyserModel._load_config(pdfname.split("_")[0])[
@@ -30,8 +30,6 @@ class AnalyserMSGrid(AnalyserModel):
             images, tesseract_config)
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
-
-        AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_boundaries(
             images[start_idx], AnalyserModel._ocr_data_on_page(raw_ocr_data,  start_idx))

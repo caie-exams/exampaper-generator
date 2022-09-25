@@ -25,7 +25,7 @@ def worker(pdfname):
             analyser = AnalyserMSGrid()
     post_processor = PostProcessor()
 
-    question_data = analyser.process(pdfname)
+    question_data = analyser.process(pdfname, "-l arial --psm 12")
 
     processed_question_data = []
     for question in question_data:

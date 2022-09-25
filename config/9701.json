@@ -3,6 +3,9 @@
     "subject_name": "chemistry"
   },
   "analyser": {
+    "page_bound": {
+      ".*": [175, 1550, 150, 2210]
+    },
     "unwanted_content": {
       "9701_.*_ms_[^1]*": [["Answer Marks", "BOX"]],
       "9701_.*_qp_[^1]*": [

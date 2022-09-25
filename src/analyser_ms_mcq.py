@@ -13,7 +13,7 @@ class AnalyserMSMCQ(AnalyserModel):
     and will be siginificantly faster
     """
 
-    def process(self, pdfname):
+    def process(self, pdfname, tessseract_config):
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         extracted_text = []
