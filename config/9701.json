@@ -7,24 +7,32 @@
       ".*": [175, 1550, 150, 2210]
     },
     "unwanted_content": {
-      "9701_.*_ms_[^1]*": [["Answer Marks", "BOX"]],
-      "9701_.*_qp_[^1]*": [
+      ".*_ms_[^1]*": [["Answer Marks", "BOX"]],
+      ".*_qp_[^1]*": [
         ["BLANK PAGE", "ALL"],
-        ["The Periodic Table of Elements Group examination series", "ALL"]
+        ["The Periodic Table of Elements Group examination series", "ALL"],
+        ["Question * begins on the next page.", "ALL"]
       ],
-      "9701_.*_qp_3*": [
+      ".*_qp_3*": [
         ["Qualitative Analysis", "ALL"],
         ["Question * starts on the next page.", "ALL"],
         ["1 Reactions of aqueous cations", "ALL"],
         ["2 Reactions of anions", "ALL"],
         ["3 Test for gases", "ALL"]
       ],
-      "9701_.*_qp_1*": [
+      ".*_qp_1*": [
         ["Section B", "ALL"],
         ["Permission to reproduce", "ALL"],
         ["The response A", "ALL"]
       ]
     }
   },
-  "post_processor": {}
+  "post_processor": {},
+  "controller": {
+    "analyser_selection": {
+      ".*_ms_1*": "ms_mcq",
+      ".*_ms_[^1]*": "ms_grid",
+      ".*_qp_.*": "fixed_qn"
+    }
+  }
 }

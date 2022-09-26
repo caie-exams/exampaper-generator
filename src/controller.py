@@ -10,19 +10,26 @@ import json
 
 
 def worker(pdfname):
+    # load config
+    config = AnalyserModel._load_config(pdfname.split("_")[0])[
+        "controller"]
 
     print("now start with " + pdfname)
 
-    pdfname_split = pdfname.split('_')
+    for pdfname_regex in config["analyser_selection"]:
+        if re.match(pdfname_regex, pdfname) is not None:
+            analyser_selection = config["analyser_selection"][pdfname_regex]
+            break
 
-    if pdfname_split[2] == "qp":
+    if analyser_selection is None:
+        raise Exception("can't specify analyser")
+    elif analyser_selection == "fixed_qn":
         analyser = AnalyserFixedQN()
-    elif pdfname_split[2] == "ms":
-        # TODO: need to implement config file heere
-        if pdfname_split[-1][0] == "1":
-            analyser = AnalyserMSMCQ()
-        else:
-            analyser = AnalyserMSGrid()
+    elif analyser_selection == "ms_mcq":
+        analyser = AnalyserMSMCQ()
+    elif analyser_selection == "ms_grid":
+        analyser = AnalyserMSGrid()
+
     post_processor = PostProcessor()
 
     question_data = analyser.process(pdfname, "-l arial --psm 12")

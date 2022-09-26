@@ -3,6 +3,7 @@ from configuration import *
 import cv2
 import pytesseract
 import numpy as np
+import jsonmerge
 import re
 from math import ceil, floor
 from pdf2image import convert_from_path
@@ -25,9 +26,21 @@ class AnalyserModel:
         """
         input config name (without json) and return the config
         """
+
         config_path = CONFIG_DIR_PATH + config_name + ".json"
-        with open(config_path, "r") as config_file:
-            return json.loads(config_file.read())
+        defualt_config_path = CONFIG_DIR_PATH + "default.json"
+
+        with open(defualt_config_path, "r") as default_config_file:
+            default_config = json.loads(default_config_file.read())
+
+        try:
+            with open(config_path, "r") as config_file:
+                subject_config = json.loads(config_file.read())
+        except FileNotFoundError:
+            return default_config
+
+        # merge default and subject specific config
+        return jsonmerge.merge(default_config, subject_config)
 
     @ staticmethod
     def _scan_to_get_raw_ocr_data(images, tesseract_config=None):
@@ -347,7 +360,7 @@ class AnalyserModel:
                     break
 
                 coords.append({"page_num": page_idx, "left": left_bound / image_width, "right": right_bound / image_width,
-                               "top": top_coord / image_height, "bottom": bottom_coord / image_height})
+                               "top": top_coord / image_height, "bottom": (bottom_coord + 5) / image_height})
 
                 text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
                     data_on_page, left_bound, right_bound, top_coord, bottom_coord))

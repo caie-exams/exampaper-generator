@@ -33,6 +33,7 @@ class AnalyserFixedQN(AnalyserModel):
         for pdfname_regex in config["page_bound"]:
             if re.match(pdfname_regex, pdfname) is not None:
                 CONTENT_AREA_BOUND = config["page_bound"][pdfname_regex]
+                break
         if CONTENT_AREA_BOUND == []:
             raise Exception("page bound not specified in config")
 
