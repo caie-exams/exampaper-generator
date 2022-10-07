@@ -55,7 +55,7 @@ def main():
     pdf_filename_list = [filename for filename in os.listdir(
         PDFS_DIR) if filename.endswith(".pdf")]
 
-    done_data_async = []
+    done_data_async = {}
 
     for pdf_filename in pdf_filename_list:
 
@@ -64,12 +64,23 @@ def main():
 
         pdfname = pdf_filename.split(".")[0]
         result = pool.apply_async(worker, args=(pdfname,))
-        done_data_async.append(result)
+        done_data_async[pdfname] = result
 
-    done_data = [data.get() for data in done_data_async]
+    done_data = []
+    error_list = {}
+    for key in done_data_async:
+        try:
+            got_data = done_data_async[key].get()
+        except Exception as e:
+            error_list[key] = str(e)
 
-    with open(DEBUG_DIR_PATH + "json/" + "controller_dump.json", "w") as debugfile:
+        done_data.append(got_data)
+
+    with open(DEBUG_DIR_PATH + "json/" + "controller_results.json", "w") as debugfile:
         debugfile.write(json.dumps(done_data))
+
+    with open(DEBUG_DIR_PATH + "json/" + "controller_errors.json", "w") as debugfile:
+        debugfile.write(json.dumps(error_list))
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ class AnalyserFixedQN(AnalyserModel):
     """
     use to process most questions paper and some mcqs that
     - does not have a grid line
-    - the position of quesition numbers are fixed 
+    - the position of quesition numbers are fixed
 
     takes name of pdf and spit out questions raw data
 
@@ -22,18 +22,20 @@ class AnalyserFixedQN(AnalyserModel):
     def process(self, pdfname, tesseract_config=None):
 
         # load config
-        config = AnalyserModel._load_config(pdfname.split("_")[0])[
-            "analyser"]
-
-        # load page bound
-
-        CONTENT_AREA_BOUND = []
-        for pdfname_regex in config["page_bound"]:
-            if re.match(pdfname_regex, pdfname) is not None:
-                CONTENT_AREA_BOUND = config["page_bound"][pdfname_regex]
-                break
-        if CONTENT_AREA_BOUND == []:
+        CONTENT_AREA_BOUND = next(AnalyserModel.get_config(
+            pdfname, "analyser", "page_bound"))
+        if CONTENT_AREA_BOUND is None:
             raise Exception("page bound not specified in config")
+
+        CONTENT_AREA_PADDING = next(AnalyserModel.get_config(
+            pdfname, "analyser", "question_padding"))
+        if CONTENT_AREA_PADDING is None:
+            CONTENT_AREA_PADDING = [0, 0, 0, 0]
+
+        UNWANTED_CONTENT_LIST = []
+        for item in AnalyserModel.get_config(
+                pdfname, "analyser", "unwanted_content"):
+            UNWANTED_CONTENT_LIST.extend(item)
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
@@ -51,12 +53,9 @@ class AnalyserFixedQN(AnalyserModel):
                 pdfpath, idx, images[idx])
 
         # eliminate unwanted content for each page
-        unwanted_content_list = []
-        for pdfname_regex in config["unwanted_content"]:
-            if re.match(pdfname_regex, pdfname) is not None:
-                unwanted_content_list += config["unwanted_content"][pdfname_regex]
-        raw_ocr_data = AnalyserModel._add_break_point(
-            raw_ocr_data, unwanted_content_list, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
+        if UNWANTED_CONTENT_LIST is not None:
+            raw_ocr_data = AnalyserModel._add_break_point(
+                raw_ocr_data, UNWANTED_CONTENT_LIST, 0, page_cnt - 1, *CONTENT_AREA_BOUND)
 
         AnalyserModel.write_debugfile("raw_ocr_data", raw_ocr_data)
 
@@ -69,7 +68,7 @@ class AnalyserFixedQN(AnalyserModel):
         # question_list = self._generate_mcq(
         #     raw_ocr_data, longest_sequence,  pdfname)
         question_list = AnalyserModel._generate_questions(
-            raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND)
+            raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND, * CONTENT_AREA_PADDING)
 
         return question_list
 
@@ -77,7 +76,7 @@ class AnalyserFixedQN(AnalyserModel):
 # main is used for debug
 def main():
 
-    pdfname = "9608_w20_qp_12"
+    pdfname = "9608_s15_ms_11"
     # 34
 
     analyser = AnalyserFixedQN()

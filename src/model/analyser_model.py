@@ -1,6 +1,7 @@
 from configuration import *
 
 import cv2
+import re
 import pytesseract
 import numpy as np
 import jsonmerge
@@ -40,6 +41,15 @@ class AnalyserModel:
 
         # merge default and subject specific config
         return jsonmerge.merge(default_config, subject_config)
+
+    @staticmethod
+    def get_config(pdfname, module, config_name):
+        module_config = AnalyserModel._load_config(
+            pdfname.split("_")[0])[module]
+        config_entry = None
+        for pdfname_regex in module_config[config_name]:
+            if re.match(pdfname_regex, pdfname) is not None:
+                yield module_config[config_name][pdfname_regex]
 
     @ staticmethod
     def _pdfplumber_get_raw_data(pdfpath, pagenum, image: np.ndarray):
@@ -311,8 +321,12 @@ class AnalyserModel:
         return raw_ocr_data
 
     @ staticmethod
-    def _generate_questions(raw_ocr_data, question_number_sequence, pdfname, page_cnt, image_width, image_height,
-                            left_bound, right_bound, top_bound, bottom_bound):
+    def _generate_questions(
+            raw_ocr_data, question_number_sequence,
+            pdfname, page_cnt,
+            image_width, image_height,
+            left_bound, right_bound, top_bound, bottom_bound,
+            left_padding, right_padding, top_padding, bottom_padding):
         """
         takes longest incresing sequence of longest increasing
         questions, returns answer list
@@ -385,8 +399,29 @@ class AnalyserModel:
                         ))) == 0:
                     break
 
-                coords.append({"page_num": page_idx, "left": left_bound / image_width, "right": right_bound / image_width,
-                               "top": top_coord / image_height, "bottom": (bottom_coord + 5) / image_height})
+                # deal with padding
+                l, r, t, b = left_bound, right_bound, top_coord, bottom_coord
+
+                l -= left_padding
+                if l < 0:
+                    l = 0
+
+                r += right_padding
+                if r > image_width:
+                    r = image_width
+
+                t -= top_padding
+                if t < 0:
+                    t = 0
+
+                b += bottom_padding
+                if b > image_height:
+                    b = image_height
+
+                # generate location
+
+                coords.append({"page_num": page_idx, "left": l / image_width, "right": r / image_width,
+                               "top": t / image_height, "bottom": b / image_height})
 
                 text += AnalyserModel._merge_text(AnalyserModel._ocr_data_in_range(
                     data_on_page, left_bound, right_bound, top_coord, bottom_coord))

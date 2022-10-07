@@ -6,18 +6,29 @@
     "page_bound": {
       ".*": [175, 1550, 150, 2220]
     },
+    "question_padding": {
+      ".*1[56]_ms_.*": [50, 5, 0, 10],
+      ".*_qp_.*": [50, 5, 10, 10],
+      ".*_ms_.*": [0, 0, 0, 10]
+    },
     "unwanted_content": {
       ".*_ms_.*": [["Answer Marks", "BOX"]],
       ".*_qp_.*": [
         ["BLANK PAGE", "ALL"],
         ["Question * begins on the next page.", "ALL"]
       ],
-      ".*_qp_2*": [["Appendix Built-in functions", "ALL"]]
+      ".*_qp_2*": [["Appendix Built-in functions", "ALL"]],
+      ".*_ms_2*": [
+        ["Appendix Programming Solutions", "ALL"],
+        ["End of Mark Scheme – example program code solutions follow", "ALL"],
+        ["Program Code Example Solutions", "ALL"]
+      ]
     }
   },
   "post_processor": {},
   "controller": {
     "analyser_selection": {
+      ".*1[56]_ms_.*": "fixed_qn",
       ".*_ms_.*": "ms_grid",
       ".*_qp_.*": "fixed_qn"
     }

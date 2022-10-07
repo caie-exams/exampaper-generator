@@ -3,7 +3,6 @@ from configuration import *
 import PyPDF2
 import pdftotext
 import pdf2image
-import hashlib
 import PIL
 from io import BytesIO
 from decimal import Decimal
@@ -32,6 +31,7 @@ class PostProcessor():
 
             pdf_coords = PostProcessor._image_coords_to_pdf_coords(
                 location["left"], location["right"], location["top"], location["bottom"], upperright_x, upperright_y, orientation)
+
             cropped_pdffile = PostProcessor._crop_pdf_page(
                 original_pdffile, location["page_num"], pdf_coords["lower_left"], pdf_coords["lower_right"], pdf_coords["upper_left"], pdf_coords["upper_right"])
             text += PostProcessor._extract_text_from_pdf(cropped_pdffile)
@@ -74,10 +74,10 @@ class PostProcessor():
 
         # if the page is landscape, the coords of pdf stays portrait
 
-        if left <= 0 or left > 1 \
-                or right <= 0 or right > 1 \
-                or top <= 0 or top > 1 \
-                or bottom <= 0 or bottom > 1:
+        if left < 0 or left > 1 \
+                or right < 0 or right > 1 \
+                or top < 0 or top > 1 \
+                or bottom < 0 or bottom > 1:
             raise Exception("coords not correct")
 
         if orientation == 90:

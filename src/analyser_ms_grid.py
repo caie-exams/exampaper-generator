@@ -1,10 +1,11 @@
 from model.analyser_model import *
 
 import cv2
-import re
 from pdf2image import convert_from_path
 from longest_increasing_subsequence import longest_increasing_subsequence
+from fuzzysearch import find_near_matches
 from fuzzy_match import algorithims
+from func_timeout import func_timeout, FunctionTimedOut
 
 
 class AnalyserMSGrid(AnalyserModel):
@@ -18,8 +19,15 @@ class AnalyserMSGrid(AnalyserModel):
     def process(self, pdfname, tesseract_config=None):
 
         # load config
-        config = AnalyserModel._load_config(pdfname.split("_")[0])[
-            "analyser"]
+        UNWANTED_CONTENT_LIST = []
+        for item in AnalyserModel.get_config(
+                pdfname, "analyser", "unwanted_content"):
+            UNWANTED_CONTENT_LIST.extend(item)
+
+        CONTENT_AREA_PADDING = next(AnalyserModel.get_config(
+            pdfname, "analyser", "question_padding"))
+        if CONTENT_AREA_PADDING is None:
+            CONTENT_AREA_PADDING = [0, 0, 0, 0]
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
@@ -34,7 +42,8 @@ class AnalyserMSGrid(AnalyserModel):
             raw_ocr_data += AnalyserModel._pdfplumber_get_raw_data(
                 pdfpath, idx, images[idx])
 
-        start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
+        start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(
+            raw_ocr_data, page_cnt)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_boundaries(
@@ -49,12 +58,9 @@ class AnalyserMSGrid(AnalyserModel):
             for idx in range(start_idx, end_idx + 1))[0]
 
         # eliminate unwanted content for each page
-        unwanted_content_list = []
-        for pdfname_regex in config["unwanted_content"]:
-            if re.match(pdfname_regex, pdfname) is not None:
-                unwanted_content_list += config["unwanted_content"][pdfname_regex]
-        raw_ocr_data = AnalyserModel._add_break_point(
-            raw_ocr_data, unwanted_content_list, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound)
+        if UNWANTED_CONTENT_LIST is not None:
+            raw_ocr_data = AnalyserModel._add_break_point(
+                raw_ocr_data, UNWANTED_CONTENT_LIST, start_idx, end_idx, left_bound, right_bound, top_bound, bottom_bound)
 
         # find the longest non decreasing sequence
 
@@ -77,12 +83,16 @@ class AnalyserMSGrid(AnalyserModel):
                 longest_increasing_sequence.append(item)
 
         question_list = AnalyserModel._generate_questions(
-            raw_ocr_data, longest_increasing_sequence, pdfname, page_cnt, image_width, image_height, left_bound, right_bound, top_bound, bottom_bound)
+            raw_ocr_data, longest_increasing_sequence,
+            pdfname, page_cnt,
+            image_width, image_height,
+            left_bound, right_bound, top_bound, bottom_bound,
+            *CONTENT_AREA_PADDING)
 
         return question_list
 
     @ staticmethod
-    def _find_ms_page_range(raw_ocr_data):
+    def _find_ms_page_range(raw_ocr_data, page_cnt):
         """
         return the first and last page of markscheme
         """
@@ -90,18 +100,28 @@ class AnalyserMSGrid(AnalyserModel):
         start_page = 0
         end_page = 0
 
-        # find the strictly increasing number of pages
-        question_sequence = [ocr_data[1] for ocr_data in raw_ocr_data if algorithims.levenshtein(
-            ocr_data[11], "Question") >= 0.8]
-        answer_sequence = [ocr_data[1] for ocr_data in raw_ocr_data if algorithims.levenshtein(
-            ocr_data[11], "Answer") >= 0.8]
-        common_sequence = [
-            page_idx for page_idx in question_sequence if page_idx in answer_sequence]
+        page_sequence = []
+        for pagenum in range(0, page_cnt):
+            raw_ocr_text = AnalyserModel._merge_text(
+                AnalyserModel._ocr_data_on_page(raw_ocr_data, pagenum))
+            if raw_ocr_text.__contains__("Question Answer Marks"):
+                page_sequence.append(pagenum)
+            else:
+                try:
+                    matchs = func_timeout(1, find_near_matches,
+                                          args=("Question Answer Marks",
+                                                raw_ocr_text),
+                                          kwargs={"max_l_dist": int(len("Question Answer Marks") * 0.2)})
+                except FunctionTimedOut:
+                    continue
 
-        longest_sequence = longest_increasing_subsequence(
-            common_sequence, False)
+                if len(matchs) != 0:
+                    page_sequence.append(pagenum)
 
-        return [longest_sequence[0], longest_sequence[-1]]
+        if page_sequence == []:
+            raise Exception("can't detect any markscheme page")
+
+        return [page_sequence[0], page_sequence[-1]]
 
     @ staticmethod
     def _remove_grid_lines(image):
@@ -216,12 +236,15 @@ class AnalyserMSGrid(AnalyserModel):
         # vertically: left of box, left of content, ... , right of box
         # horizontally: top of content, bottom of box
 
+        if len(vert_contours) < 1 or len(hort_contours) < 0:
+            raise Exception("can't find table on page")
+
         return vert_contours[1], vert_contours[-1], top_coord, hort_contours[-1],
 
 
 def main():
 
-    pdfname = "9608_w20_ms_11"
+    pdfname = "9608_s21_ms_22"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
