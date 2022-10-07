@@ -4,7 +4,7 @@
   },
   "analyser": {
     "page_bound": {
-      ".*": [175, 1550, 150, 2210]
+      ".*": [175, 1550, 150, 2220]
     },
     "unwanted_content": {
       ".*_ms_[^1]*": [["Answer Marks", "BOX"]],

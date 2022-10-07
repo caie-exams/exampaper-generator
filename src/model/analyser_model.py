@@ -4,11 +4,10 @@ import cv2
 import pytesseract
 import numpy as np
 import jsonmerge
-import re
-from math import ceil, floor
 from pdf2image import convert_from_path
 from fuzzysearch import find_near_matches
 from func_timeout import func_timeout, FunctionTimedOut
+import pdfplumber
 
 
 class AnalyserModel:
@@ -41,6 +40,33 @@ class AnalyserModel:
 
         # merge default and subject specific config
         return jsonmerge.merge(default_config, subject_config)
+
+    @ staticmethod
+    def _pdfplumber_get_raw_data(pdfpath, pagenum, image: np.ndarray):
+
+        # TODO: fix this module, complete replace scan to get raw ocr data with this module
+
+        with pdfplumber.open(pdfpath) as pdf:
+            page = pdf.pages[pagenum]
+
+            raw_data = []
+            for word in page.extract_words():
+                image_width, image_height = image.shape[1], image.shape[0]
+                width_ratio = image_width / page.width
+                height_ratio = image_height / page.height
+
+                new_raw_data = [0 for i in range(0, 12)]
+                new_raw_data[1] = pagenum
+                new_raw_data[6] = word["x0"] * width_ratio
+                new_raw_data[8] = (word["x1"] - word["x0"]) * width_ratio
+                new_raw_data[7] = word["top"] * height_ratio
+                new_raw_data[9] = (word["bottom"] - word["top"]) * height_ratio
+                new_raw_data[10] = 1.0
+                new_raw_data[11] = word["text"]
+
+                raw_data.append(new_raw_data)
+
+            return raw_data
 
     @ staticmethod
     def _scan_to_get_raw_ocr_data(images, tesseract_config=None):

@@ -26,8 +26,14 @@ class AnalyserMSGrid(AnalyserModel):
         page_cnt = len(images)
         images = list(map(AnalyserModel._image_preprocessing, images))
 
-        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, tesseract_config)
+        # raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
+        #     images, tesseract_config)
+
+        raw_ocr_data = []
+        for idx in range(0, page_cnt):
+            raw_ocr_data += AnalyserModel._pdfplumber_get_raw_data(
+                pdfpath, idx, images[idx])
+
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(raw_ocr_data)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
 
@@ -215,7 +221,7 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9701_w18_ms_36"
+    pdfname = "9608_w20_ms_11"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)

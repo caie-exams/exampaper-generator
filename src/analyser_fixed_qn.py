@@ -1,10 +1,8 @@
 from model.analyser_model import *
 
-import cv2
-import pytesseract
 from pdf2image import convert_from_path
 from longest_increasing_subsequence import longest_increasing_subsequence
-import time
+import re
 
 
 class AnalyserFixedQN(AnalyserModel):
@@ -44,8 +42,13 @@ class AnalyserFixedQN(AnalyserModel):
 
         page_cnt = len(images)
 
-        raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
-            images, tesseract_config)
+        # raw_ocr_data = AnalyserModel._scan_to_get_raw_ocr_data(
+        #     images, tesseract_config)
+
+        raw_ocr_data = []
+        for idx in range(0, page_cnt):
+            raw_ocr_data += AnalyserModel._pdfplumber_get_raw_data(
+                pdfpath, idx, images[idx])
 
         # eliminate unwanted content for each page
         unwanted_content_list = []
@@ -68,14 +71,13 @@ class AnalyserFixedQN(AnalyserModel):
         question_list = AnalyserModel._generate_questions(
             raw_ocr_data, longest_sequence, pdfname, page_cnt, image_width, image_height, * CONTENT_AREA_BOUND)
 
-        AnalyserModel.write_debugfile("question_list", question_list)
         return question_list
 
 
 # main is used for debug
 def main():
 
-    pdfname = "9701_w18_qp_51"
+    pdfname = "9608_w20_qp_12"
     # 34
 
     analyser = AnalyserFixedQN()
