@@ -1,5 +1,6 @@
 data/**/*
 debug/**/*
+node_modules
 tmp/
 .venv/
 __pycache__/

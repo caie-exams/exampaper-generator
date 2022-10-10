@@ -10,6 +10,7 @@
 
 - [Add text to pdf using report lab](https://stackoverflow.com/questions/1180115/add-text-to-existing-pdf-using-python)
 - [Embed PDF in PDF using report lab](https://gist.github.com/marsam/7327216)
+- [Watermark PDF with other PDF](https://github.com/pmaupin/pdfrw/blob/master/examples/fancy_watermark.py)
 
 - [Report Lab ](https://ithelp.ithome.com.tw/articles/10239020)
 

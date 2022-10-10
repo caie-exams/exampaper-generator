@@ -6,6 +6,14 @@
     "page_bound": {
       ".*": [175, 1550, 150, 2220]
     },
+    "gird_header": {
+      ".*_ms_.*": "Question Answer Marks"
+    },
+    "question_padding": {
+      ".*1[56]_ms_.*": [50, 5, 0, 10],
+      ".*_qp_.*": [50, 5, 10, 10],
+      ".*_ms_.*": [0, 0, 0, 10]
+    },
     "unwanted_content": {
       ".*_ms_[^1]*": [["Answer Marks", "BOX"]],
       ".*_qp_[^1]*": [
@@ -31,6 +39,7 @@
   "controller": {
     "analyser_selection": {
       ".*_ms_1*": "ms_mcq",
+      ".*1[56]_ms_.*": "fixed_qn",
       ".*_ms_[^1]*": "ms_grid",
       ".*_qp_.*": "fixed_qn"
     }

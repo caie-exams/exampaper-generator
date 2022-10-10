@@ -142,8 +142,21 @@ class PostProcessor():
 
 def main():
     postprocessor = PostProcessor()
-    DATA = [{'pdfname': '9701_w18_ms_43', 'question_num': 3, 'location': [{'page_num': 7, 'left': 0.14365113296280463,
-                                                                           'right': 0.9247541684480547, 'top': 0.12462189957652753, 'bottom': 0.34180278281911675}], 'text': None}]
+    DATA = [{
+        "pdfname": "9608_s15_qp_41",
+        "question_num": 1,
+        "location": [
+            {
+                "page_num": 2,
+                "left": 0.20557436517533253,
+                "right": 0.9401451027811366,
+                "top": 0.20231279217726075,
+                "bottom": 0.6643823384640694,
+                "hashed_filename": "9608_s15_qp_41_1_2"
+            }
+        ],
+        "text": "1\n\nA turnstile is a gate which is in a locked state. To open it and pass through, a customer inserts\na coin into a slot on the turnstile. The turnstile then unlocks and allows the customer to push the\nturnstile and pass through the gate.\nAfter the customer has passed through, the turnstile locks again. If a customer pushes the turnstile\nwhile it is in the locked state, it will remain locked until another coin is inserted.\nThe turnstile has two possible states: locked and unlocked. The transition from one state to\nanother is as shown in the table below.\nCurrent state\n\nEvent\n\nNext state\n\nLocked\n\nInsert coin\n\nUnlocked\n\nLocked\n\nPush\n\nLocked\n\nUnlocked\n\nAttempt to insert coin\n\nUnlocked\n\nUnlocked\n\nPass through\n\nLocked\n\nComplete the state transition diagram for the turnstile:\n\n..............................\n\n..............................\n\n..............................\n\n...........................\n\n..............................\nstart\n\n..............................\n\n[5]\n\n\f"
+    }, ]
     for data in DATA:
         done_data = postprocessor.process(data)
         # print(done_data)

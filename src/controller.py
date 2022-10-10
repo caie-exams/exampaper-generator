@@ -73,8 +73,9 @@ def main():
             got_data = done_data_async[key].get()
         except Exception as e:
             error_list[key] = str(e)
+            raise (e)
 
-        done_data.append(got_data)
+        done_data.extend(got_data)
 
     with open(DEBUG_DIR_PATH + "json/" + "controller_results.json", "w") as debugfile:
         debugfile.write(json.dumps(done_data))

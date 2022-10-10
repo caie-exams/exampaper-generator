@@ -29,6 +29,11 @@ class AnalyserMSGrid(AnalyserModel):
         if CONTENT_AREA_PADDING is None:
             CONTENT_AREA_PADDING = [0, 0, 0, 0]
 
+        GRID_HEADER = next(AnalyserModel.get_config(
+            pdfname, "analyser", "grid_header"))
+        if GRID_HEADER is None:
+            raise Exception("grid header is null!")
+
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
         page_cnt = len(images)
@@ -43,7 +48,7 @@ class AnalyserMSGrid(AnalyserModel):
                 pdfpath, idx, images[idx])
 
         start_idx, end_idx = AnalyserMSGrid._find_ms_page_range(
-            raw_ocr_data, page_cnt)
+            raw_ocr_data, page_cnt, GRID_HEADER)
         image_width, image_height = images[start_idx].shape[1], images[start_idx].shape[0]
 
         left_bound, right_bound, top_bound, bottom_bound = AnalyserMSGrid._find_ms_content_boundaries(
@@ -92,7 +97,7 @@ class AnalyserMSGrid(AnalyserModel):
         return question_list
 
     @ staticmethod
-    def _find_ms_page_range(raw_ocr_data, page_cnt):
+    def _find_ms_page_range(raw_ocr_data, page_cnt, grid_header):
         """
         return the first and last page of markscheme
         """
@@ -104,14 +109,14 @@ class AnalyserMSGrid(AnalyserModel):
         for pagenum in range(0, page_cnt):
             raw_ocr_text = AnalyserModel._merge_text(
                 AnalyserModel._ocr_data_on_page(raw_ocr_data, pagenum))
-            if raw_ocr_text.__contains__("Question Answer Marks"):
+            if raw_ocr_text.__contains__(grid_header):
                 page_sequence.append(pagenum)
             else:
                 try:
                     matchs = func_timeout(1, find_near_matches,
-                                          args=("Question Answer Marks",
+                                          args=(grid_header,
                                                 raw_ocr_text),
-                                          kwargs={"max_l_dist": int(len("Question Answer Marks") * 0.2)})
+                                          kwargs={"max_l_dist": int(len(grid_header) * 0.2)})
                 except FunctionTimedOut:
                     continue
 
