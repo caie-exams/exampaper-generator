@@ -36,7 +36,7 @@ class Generator:
         # get data
         for question in question_list:
 
-            for location in question["location"]:
+            for idx, location in enumerate(question["location"]):
 
                 # get embed object
                 embed_filename = location["hashed_filename"]
@@ -48,8 +48,12 @@ class Generator:
 
                 # scale the embed object
                 ewidth, eheight = Generator.get_pdf_shape(embed_page)
-                k = Generator.calculate_resize_factor(
-                    bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight + 2 * TEXT_HEIGHT)
+                if idx == 0:
+                    k = Generator.calculate_resize_factor(
+                        bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight + 2 * TEXT_HEIGHT)
+                else:
+                    k = Generator.calculate_resize_factor(
+                        bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight)
                 embed_object.scale(k)
                 ewidth *= k
                 eheight *= k
@@ -57,7 +61,7 @@ class Generator:
                 # save the info to cache
                 embed_data_cache.append(
                     {"pdf": location["hashed_filename"],
-                        "obj": embed_object, "w": ewidth, "h": eheight, "loc": location})
+                        "obj": embed_object, "w": ewidth, "h": eheight, "loc": location, "idx": idx})
 
         # arrange the layout
 
@@ -65,14 +69,16 @@ class Generator:
         embed_data_cache_tmp = []
 
         page_cnt = 0
+        question_cnt = 0
         fufilled_height = bheight * PAGE_PADDING_PERCENT
 
         while len(embed_data_cache) > 0:
 
             embed_data = embed_data_cache[0]
+
             text = "_".join(embed_data["pdf"].split(
                 "_")[:4]) + " Q" + embed_data["pdf"].split("_")[4]
-            text = str(len(embed_data_cache_tmp) + 1) + ".          " + text
+            text = str(question_cnt + 1) + ".          " + text
 
             text_data = {"t": text, "x": bwidth *
                          PAGE_PADDING_PERCENT, "y": bheight - fufilled_height, "page": page_cnt}
@@ -83,6 +89,9 @@ class Generator:
                 fufilled_height = bheight * PAGE_PADDING_PERCENT
                 page_cnt += 1
                 continue
+
+            if embed_data["idx"] == 0:
+                question_cnt += 1
 
             embed_data_cache.pop(0)
 
@@ -99,9 +108,13 @@ class Generator:
             # embed_data["x"], embed_data["y"] = 0, 0
 
             embed_data["x"] += bwidth * (PAGE_PADDING_PERCENT)
-            embed_data["y"] += bheight - fufilled_height - 2 * TEXT_HEIGHT
+            embed_data["y"] += bheight - fufilled_height
 
-            text_data_cache.append(text_data)
+            if embed_data["idx"] == 0:
+                embed_data["y"] -= 2 * TEXT_HEIGHT
+
+            if embed_data["idx"] == 0:
+                text_data_cache.append(text_data)
             embed_data_cache_tmp.append(embed_data)
 
         embed_data_cache = embed_data_cache_tmp
@@ -300,7 +313,7 @@ def main():
     # generate question
 
     selected_qp_list = GeneratorFilter.filter(
-        qp_list, "9701_w17_ms_43")
+        qp_list, "9701_w17_qp_43", is_random=False)
 
     filter_qp_list, filter_ms_list = GeneratorFilter.generate_qp_ms_pairs(
         selected_qp_list, ms_list)
@@ -308,6 +321,9 @@ def main():
     generator = Generator("template/default.pdf")
     generator.process(filter_qp_list, "qp.pdf")
     generator.process(filter_ms_list, "ms.pdf")
+
+    AnalyserModel.write_debugfile("generator_qp", filter_qp_list)
+    AnalyserModel.write_debugfile("generator_ms", filter_ms_list)
 
 
 if __name__ == "__main__":
