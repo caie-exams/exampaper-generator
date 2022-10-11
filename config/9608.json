@@ -20,8 +20,8 @@
         ["BLANK PAGE", "ALL"],
         ["Question * begins on the next page.", "ALL"]
       ],
-      ".*_qp_2*": [["Appendix Built-in functions", "ALL"]],
-      ".*_ms_2*": [
+      ".*_qp_2.*": [["Appendix Built-in functions", "ALL"]],
+      ".*_ms_2.*": [
         ["Appendix Programming Solutions", "ALL"],
         ["End of Mark Scheme – example program code solutions follow", "ALL"],
         ["Program Code Example Solutions", "ALL"]

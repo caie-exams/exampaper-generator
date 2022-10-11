@@ -39,7 +39,7 @@ class AnalyserMSMCQ(AnalyserModel):
         elif mcq_type == "old":
             return AnalyserMSMCQ._generate_old(pdfname, extracted_text)
         else:
-            raise ("can't determine mcq type")
+            raise Exception("can't determine mcq type")
 
     @staticmethod
     def _generate_new(pdfname, extracted_text):
@@ -56,7 +56,8 @@ class AnalyserMSMCQ(AnalyserModel):
             for i in range(0, len(splitted), 3):
                 number, answer = splitted[i], splitted[i+1]
                 if not number.isnumeric():
-                    raise ("format error, question number should be int")
+                    raise Exception(
+                        "format error, question number should be int")
                 question_list.append(AnalyserModel._make_question(
                     pdfname, int(number), [], answer))
 
@@ -77,7 +78,8 @@ class AnalyserMSMCQ(AnalyserModel):
             for i in range(0, len(splitted), 2):
                 number, answer = splitted[i], splitted[i+1]
                 if not number.isnumeric():
-                    raise ("format error, question number should be int")
+                    raise Exception(
+                        "format error, question number should be int")
                 question_list.append(AnalyserModel._make_question(
                     pdfname, int(number), [], answer))
 

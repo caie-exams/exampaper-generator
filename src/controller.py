@@ -11,23 +11,22 @@ import json
 
 def worker(pdfname):
     # load config
-    config = AnalyserModel._load_config(pdfname.split("_")[0])[
-        "controller"]
 
     print("now start with " + pdfname)
 
-    for pdfname_regex in config["analyser_selection"]:
-        if re.match(pdfname_regex, pdfname) is not None:
-            analyser_selection = config["analyser_selection"][pdfname_regex]
-            break
+    analyser_selection = next(AnalyserModel.get_config(
+        pdfname, "controller", "analyser_selection"))
 
     if analyser_selection is None:
         raise Exception("can't specify analyser")
     elif analyser_selection == "fixed_qn":
+        print(pdfname, "fixed_qn ")
         analyser = AnalyserFixedQN()
     elif analyser_selection == "ms_mcq":
+        print(pdfname, "ms_mcq ")
         analyser = AnalyserMSMCQ()
     elif analyser_selection == "ms_grid":
+        print(pdfname, "ms_grid ")
         analyser = AnalyserMSGrid()
 
     post_processor = PostProcessor()
@@ -49,7 +48,8 @@ def main():
     # scan pdf file in the folder
     # for each pdf, scan it to obtain questions
 
-    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+    # pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+    pool = multiprocessing.Pool(1)
 
     PDFS_DIR = DATA_DIR_PATH + "pdf/"
     pdf_filename_list = [filename for filename in os.listdir(
@@ -71,11 +71,9 @@ def main():
     for key in done_data_async:
         try:
             got_data = done_data_async[key].get()
+            done_data.extend(got_data)
         except Exception as e:
             error_list[key] = str(e)
-            raise (e)
-
-        done_data.extend(got_data)
 
     with open(DEBUG_DIR_PATH + "json/" + "controller_results.json", "w") as debugfile:
         debugfile.write(json.dumps(done_data))
