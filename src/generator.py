@@ -300,7 +300,7 @@ def main():
     # generate question
 
     selected_qp_list = GeneratorFilter.filter(
-        qp_list, ".*qp_4.*")
+        qp_list, "9701_w17_ms_43")
 
     filter_qp_list, filter_ms_list = GeneratorFilter.generate_qp_ms_pairs(
         selected_qp_list, ms_list)
