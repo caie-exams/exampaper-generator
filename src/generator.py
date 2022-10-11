@@ -71,7 +71,7 @@ class Generator:
 
             embed_data = embed_data_cache[0]
             text = "_".join(embed_data["pdf"].split(
-                "_")[:4]) + " Q" + embed_data["pdf"].split("_")[5]
+                "_")[:4]) + " Q" + embed_data["pdf"].split("_")[4]
             text = str(len(embed_data_cache_tmp) + 1) + ".          " + text
 
             text_data = {"t": text, "x": bwidth *
@@ -215,31 +215,38 @@ class Generator:
 class GeneratorFilter:
 
     @staticmethod
-    def filter(qp_list: list, pdfname_regex: str,
+    def filter(qp_list: list, pdfname_regex: str = ".*",
                text_contains: list = None, text_excludes: list = None,
-               num_limit: int = 10):
+               num_limit: int = 10, is_random=True):
 
         selected = []
 
+        if is_random:
+            random.shuffle(qp_list)
+
         for question in qp_list:
 
-            if len(selected) > num_limit:
+            if len(selected) >= num_limit:
                 break
 
-            if not re.match(pdfname_regex, question["pdfname"]):
+            if pdfname_regex is not None and \
+                    not re.match(pdfname_regex, question["pdfname"]):
                 continue
 
-                flag = True
+            flag = True
 
-            for text in text_contains:
-                if text.lower() not in question["text"].lower():
-                    flag = False
-                    break
+            if text_contains is not None:
+                flag = False
+                for text in text_contains:
+                    if text.lower() in question["text"].lower():
+                        flag = True
+                        break
 
-            for text in text_excludes:
-                if text.lower() in question["text"].lower():
-                    flag = False
-                    break
+            if text_excludes is not None:
+                for text in text_excludes:
+                    if text.lower() in question["text"].lower():
+                        flag = False
+                        break
 
             if flag:
                 selected.append(question)
@@ -248,7 +255,25 @@ class GeneratorFilter:
 
     @staticmethod
     def generate_qp_ms_pairs(selected_qp_list, ms_list):
-        for question in selected_qp_list:
+        filter_qp_list = []
+        filter_ms_list = []
+
+        for qp in selected_qp_list:
+
+            splitted_ms_pdfname = qp["pdfname"].split("_")
+            splitted_ms_pdfname[2] = "ms"
+            ms_pdfname = "_".join(splitted_ms_pdfname)
+
+            ms = next(filter(lambda x: x["pdfname"] == ms_pdfname
+                             and x["question_num"] == qp["question_num"], ms_list), None)
+
+            if ms is None:
+                continue
+
+            filter_qp_list.append(qp)
+            filter_ms_list.append(ms)
+
+        return filter_qp_list, filter_ms_list
 
 
 def main():
@@ -261,15 +286,28 @@ def main():
     ms_list = [
         question for question in all_question_list if "ms" in question["pdfname"]]
 
-    selected = [qp_list[i] for i in range(0, 10)]
-    # for q in qp_list:
-    #     for loc in q["location"]:
-    #         if loc["hashed_filename"] == "9608_s20_qp_11_6_9":
-    #             selected.append(q)
-    #             break
-    # process
+    # key list
+
+    lattice_energy = ["lattice energy",
+                      "entropy", "born-haber", "born haber", "enthalpy"]
+    equilibria = ["pH", "buffer solution", "conjugate acid",
+                  "weak acid", "partition coefficient", "solubility"]
+    reaction_kinetics = ["reaction rate",
+                         "rate of reaction", "rate equation", "first order", ""]
+
+    exclude = ["electro", "functional group", "alkane", "peak"]
+
+    # generate question
+
+    selected_qp_list = GeneratorFilter.filter(
+        qp_list, ".*qp_4.*")
+
+    filter_qp_list, filter_ms_list = GeneratorFilter.generate_qp_ms_pairs(
+        selected_qp_list, ms_list)
+
     generator = Generator("default.pdf")
-    generator.process(selected, "out.pdf")
+    generator.process(filter_qp_list, "qp.pdf")
+    generator.process(filter_ms_list, "ms.pdf")
 
 
 if __name__ == "__main__":

@@ -48,8 +48,7 @@ def main():
     # scan pdf file in the folder
     # for each pdf, scan it to obtain questions
 
-    # pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
 
     PDFS_DIR = DATA_DIR_PATH + "pdf/"
     pdf_filename_list = [filename for filename in os.listdir(

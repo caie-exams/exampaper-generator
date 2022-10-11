@@ -6,7 +6,7 @@
     "page_bound": {
       ".*": [175, 1550, 150, 2220]
     },
-    "gird_header": {
+    "grid_header": {
       ".*_ms_.*": "Question Answer Marks"
     },
     "question_padding": {

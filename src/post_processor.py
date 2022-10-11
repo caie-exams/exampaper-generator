@@ -32,6 +32,8 @@ class PostProcessor():
             pdf_coords = PostProcessor._image_coords_to_pdf_coords(
                 location["left"], location["right"], location["top"], location["bottom"], upperright_x, upperright_y, orientation)
 
+            print(pdf_coords)
+
             cropped_pdffile = PostProcessor._crop_pdf_page(
                 original_pdffile, location["page_num"], pdf_coords["lower_left"], pdf_coords["lower_right"], pdf_coords["upper_left"], pdf_coords["upper_right"])
             text += PostProcessor._extract_text_from_pdf(cropped_pdffile)
@@ -81,9 +83,9 @@ class PostProcessor():
             raise Exception("coords not correct")
 
         if orientation == 90:
-            top, bottom, left, right = left, right, bottom, top
+            left, right, top, bottom = top, bottom, 1 - right, 1 - left
         if orientation == 270:
-            top, bottom, left, right = right, left, top, bottom
+            left, right, top, bottom = 1 - bottom, 1-top, left, right
 
         return {"lower_left": (upperright_x * Decimal(left), upperright_y * Decimal(1-bottom)),
                 "lower_right": (int(upperright_x * Decimal(right)), upperright_y * Decimal(1-bottom)),
@@ -143,19 +145,19 @@ class PostProcessor():
 def main():
     postprocessor = PostProcessor()
     DATA = [{
-        "pdfname": "9608_s15_qp_41",
+        "pdfname": "9701_w17_ms_43",
         "question_num": 1,
         "location": [
             {
-                "page_num": 2,
-                "left": 0.20557436517533253,
-                "right": 0.9401451027811366,
-                "top": 0.20231279217726075,
-                "bottom": 0.6643823384640694,
-                "hashed_filename": "9608_s15_qp_41_1_2"
-            }
+                "page_num": 1,
+                "left": 0.14621633176571183,
+                "right": 0.9286019666524156,
+                "top": 0.13740635294117653,
+                "bottom": 0.8768682118175762,
+                "hashed_filename": "9701_w17_ms_43_1_1"
+            },
         ],
-        "text": "1\n\nA turnstile is a gate which is in a locked state. To open it and pass through, a customer inserts\na coin into a slot on the turnstile. The turnstile then unlocks and allows the customer to push the\nturnstile and pass through the gate.\nAfter the customer has passed through, the turnstile locks again. If a customer pushes the turnstile\nwhile it is in the locked state, it will remain locked until another coin is inserted.\nThe turnstile has two possible states: locked and unlocked. The transition from one state to\nanother is as shown in the table below.\nCurrent state\n\nEvent\n\nNext state\n\nLocked\n\nInsert coin\n\nUnlocked\n\nLocked\n\nPush\n\nLocked\n\nUnlocked\n\nAttempt to insert coin\n\nUnlocked\n\nUnlocked\n\nPass through\n\nLocked\n\nComplete the state transition diagram for the turnstile:\n\n..............................\n\n..............................\n\n..............................\n\n...........................\n\n..............................\nstart\n\n..............................\n\n[5]\n\n\f"
+        "text": "1(a)\n\nN +2 to +3 (and oxidised)\nBr2 / Br 0 to \u20131 (and reduced)\n\n1(b)\n\n3 bonding pairs around N (in a structure involving NOBr)\nrest of molecule correct\n1(c)(i)\n\nthe power to which a concentration of a reactant is raised in the rate equation\n\n1(c)(ii)\n\nusing expt. 2 and 3\na = 2 or [NO] 2nd order\nand conc \u00d7 3 rate \u00d7 9 or 6.1 \u00d7 10\u20132 / 6.8 \u00d7 10\u20133 = (0.09 / 0.03)a\nusing expt. 1 and 2\nb = 1 or [Br2] 1st order\nand conc \u00d7 2 rate \u00d7 2 or 6.8 \u00d7 10\u20133 / 3.4 \u00d7 10\u20133 = (0.04 / 0.02)b\n\n(c)(iii)\n\ninitial rate = 0.16(32)\n\n1(c)(iv)\n\n(0.0034 = k(0.03)2(0.02))\nk = 188.9\nmol\u20132 dm6 s\u20131\n\n1(c)(v)\n\nk decreases (as rate decreases)\n\n\f1(d)\n\nm = 2 and n = 0\n\n\f"
     }, ]
     for data in DATA:
         done_data = postprocessor.process(data)

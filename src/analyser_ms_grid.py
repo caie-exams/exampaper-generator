@@ -32,7 +32,7 @@ class AnalyserMSGrid(AnalyserModel):
         GRID_HEADER = next(AnalyserModel.get_config(
             pdfname, "analyser", "grid_header"))
         if GRID_HEADER is None:
-            raise Exception("grid header is null!")
+            raise Exception("grid header is null")
 
         pdfpath = DATA_DIR_PATH + "pdf/" + pdfname + ".pdf"
         images = convert_from_path(pdfpath)
@@ -249,7 +249,7 @@ class AnalyserMSGrid(AnalyserModel):
 
 def main():
 
-    pdfname = "9608_s21_ms_22"
+    pdfname = "9701_w17_ms_43"
 
     analyser = AnalyserMSGrid()
     done_data = analyser.process(pdfname)
