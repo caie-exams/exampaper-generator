@@ -86,7 +86,7 @@ class PostProcessor():
             left, right, top, bottom = 1 - bottom, 1-top, left, right
 
         return {"lower_left": (upperright_x * Decimal(left), upperright_y * Decimal(1-bottom)),
-                "lower_right": (int(upperright_x * Decimal(right)), upperright_y * Decimal(1-bottom)),
+                "lower_right": (upperright_x * Decimal(right), upperright_y * Decimal(1-bottom)),
                 "upper_left": (upperright_x * Decimal(left), upperright_y * Decimal(1-top)),
                 "upper_right": (upperright_x * Decimal(right), upperright_y * Decimal(1-top))}
 

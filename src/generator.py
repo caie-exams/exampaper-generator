@@ -15,7 +15,7 @@ class Generator:
     def __init__(self, background_filepath):
         self.background_filepath = background_filepath
 
-    def process(self, question_list: list, output_filepath: str):
+    def process(self, question_list: list, output_filepath: str, display_qp_origin: bool):
         """
         input a list of questions, and output a pdf document
         """
@@ -48,7 +48,7 @@ class Generator:
 
                 # scale the embed object
                 ewidth, eheight = Generator.get_pdf_shape(embed_page)
-                if idx == 0:
+                if display_qp_origin and idx == 0:
                     k = Generator.calculate_resize_factor(
                         bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight + 2 * TEXT_HEIGHT)
                 else:
@@ -78,7 +78,11 @@ class Generator:
 
             text = "_".join(embed_data["pdf"].split(
                 "_")[:4]) + " Q" + embed_data["pdf"].split("_")[4]
-            text = str(question_cnt + 1) + ".          " + text
+
+            if display_qp_origin:
+                text = str(question_cnt + 1) + "." + "     " + text
+            else:
+                text = str(question_cnt + 1) + "."
 
             text_data = {"t": text, "x": bwidth *
                          PAGE_PADDING_PERCENT, "y": bheight - fufilled_height, "page": page_cnt}
@@ -95,22 +99,17 @@ class Generator:
 
             embed_data_cache.pop(0)
 
-            # TODO: here is a bug, but it works
-            # qp and ms should be applied to a unified algorithm, however,
-            # qpneed to recalculate it's coordinates, but 0, 0 just works for qp
-            # this is not possible in theory, but it just works
-            # so let's leave the problem to future
-
             embed_data["page"] = page_cnt
             embed_data["x"], embed_data["y"] = Generator.get_origin_coords(
                 embed_data["loc"], embed_data["w"], embed_data["h"])
 
-            # embed_data["x"], embed_data["y"] = 0, 0
-
             embed_data["x"] += bwidth * (PAGE_PADDING_PERCENT)
             embed_data["y"] += bheight - fufilled_height
 
-            if embed_data["idx"] == 0:
+            print(embed_data["pdf"], embed_data["y"],
+                  embed_data["y"] + embed_data["h"])
+
+            if display_qp_origin and embed_data["idx"] == 0:
                 embed_data["y"] -= 2 * TEXT_HEIGHT
 
             if embed_data["idx"] == 0:
@@ -136,8 +135,13 @@ class Generator:
         for text_data in text_data_cache:
             pg, t, x, y = page_list[text_data["page"]
                                     ], text_data["t"], text_data["x"], text_data["y"]
+
+            if not display_qp_origin:
+                x = 10
+                y += 5
+
             Generator.put_text_on_pdf(pg, t, x, y,
-                                      lambda c: c.rect(x-2, y-2, len(t) * 5 - 130, TEXT_HEIGHT + 2, fill=False))
+                                      lambda c: c.rect(x-2, y-2, len(t) * 6, TEXT_HEIGHT + 2, fill=False))
 
         # write the pdf
         Generator.merge_pages_and_write_pdf(output_filepath, page_list)
@@ -319,8 +323,8 @@ def main():
         selected_qp_list, ms_list)
 
     generator = Generator("template/default.pdf")
-    generator.process(filter_qp_list, "qp.pdf")
-    generator.process(filter_ms_list, "ms.pdf")
+    generator.process(filter_qp_list, "qp.pdf", True)
+    generator.process(filter_ms_list, "ms.pdf", False)
 
     AnalyserModel.write_debugfile("generator_qp", filter_qp_list)
     AnalyserModel.write_debugfile("generator_ms", filter_ms_list)
