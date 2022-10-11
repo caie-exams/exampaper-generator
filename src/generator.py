@@ -305,7 +305,7 @@ def main():
     filter_qp_list, filter_ms_list = GeneratorFilter.generate_qp_ms_pairs(
         selected_qp_list, ms_list)
 
-    generator = Generator("default.pdf")
+    generator = Generator("template/default.pdf")
     generator.process(filter_qp_list, "qp.pdf")
     generator.process(filter_ms_list, "ms.pdf")
 
