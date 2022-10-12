@@ -52,18 +52,19 @@ class AnalyserModel:
                 yield module_config[config_name][pdfname_regex]
 
     @ staticmethod
-    def _pdfplumber_get_raw_data(pdfpath, pagenum, image: np.ndarray):
+    def _pdfplumber_get_raw_data(pdfpath, pagenum, page_image: np.ndarray):
 
         # TODO: fix this module, complete replace scan to get raw ocr data with this module
 
         with pdfplumber.open(pdfpath) as pdf:
             page = pdf.pages[pagenum]
 
+            image_width, image_height = page_image.shape[1], page_image.shape[0]
+            width_ratio = image_width / page.width
+            height_ratio = image_height / page.height
+
             raw_data = []
             for word in page.extract_words():
-                image_width, image_height = image.shape[1], image.shape[0]
-                width_ratio = image_width / page.width
-                height_ratio = image_height / page.height
 
                 new_raw_data = [0 for i in range(0, 12)]
                 new_raw_data[1] = pagenum
@@ -73,6 +74,20 @@ class AnalyserModel:
                 new_raw_data[9] = (word["bottom"] - word["top"]) * height_ratio
                 new_raw_data[10] = 1.0
                 new_raw_data[11] = word["text"]
+
+                raw_data.append(new_raw_data)
+
+            for image in page.images:
+
+                new_raw_data = [0 for i in range(0, 12)]
+                new_raw_data[1] = pagenum
+                new_raw_data[6] = image["x0"] * width_ratio
+                new_raw_data[8] = (image["x1"] - image["x0"]) * width_ratio
+                new_raw_data[7] = image["top"] * height_ratio
+                new_raw_data[9] = (image["bottom"] -
+                                   image["top"]) * height_ratio
+                new_raw_data[10] = 1.0
+                new_raw_data[11] = "\n"
 
                 raw_data.append(new_raw_data)
 
@@ -121,7 +136,7 @@ class AnalyserModel:
 
         return AnalyserModel._raw_ocr_data_filter(raw_ocr_data)
 
-    @staticmethod
+    @ staticmethod
     def _locate_question_numbers(raw_ocr_data, start_page, end_page, left_bound, right_bound, top_bound, bottom_bound):
         """
         input raw_ocr_data and page range and coords of content area
@@ -258,7 +273,7 @@ class AnalyserModel:
 
         return text
 
-    @staticmethod
+    @ staticmethod
     def _ocr_data_matches_string(raw_ocr_data: list, target_str: str) -> list:
         """
         takes ocr data, return the portion that fuzzy matches a string
@@ -298,7 +313,7 @@ class AnalyserModel:
         # print(matched_ocr_data)
         return matched_ocr_data
 
-    @staticmethod
+    @ staticmethod
     def _add_break_point(raw_ocr_data, unwanted_content_list, start_idx, end_idx, left, right, top, bottom):
         """
         input raw ocr data and function specific config

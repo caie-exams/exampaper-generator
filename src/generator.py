@@ -106,9 +106,6 @@ class Generator:
             embed_data["x"] += bwidth * (PAGE_PADDING_PERCENT)
             embed_data["y"] += bheight - fufilled_height
 
-            print(embed_data["pdf"], embed_data["y"],
-                  embed_data["y"] + embed_data["h"])
-
             if display_qp_origin and embed_data["idx"] == 0:
                 embed_data["y"] -= 2 * TEXT_HEIGHT
 
@@ -138,7 +135,7 @@ class Generator:
 
             if not display_qp_origin:
                 x = 10
-                y += 5
+                y -= 8
 
             Generator.put_text_on_pdf(pg, t, x, y,
                                       lambda c: c.rect(x-2, y-2, len(t) * 6, TEXT_HEIGHT + 2, fill=False))
@@ -232,22 +229,37 @@ class Generator:
 class GeneratorFilter:
 
     @staticmethod
-    def filter(qp_list: list, pdfname_regex: str = ".*",
+    def find_ms(qp, ms_list):
+
+        splitted_ms_pdfname = qp["pdfname"].split("_")
+        splitted_ms_pdfname[2] = "ms"
+
+        ms_pdfname = "_".join(splitted_ms_pdfname)
+
+        ms = next(filter(lambda x: x["pdfname"] == ms_pdfname
+                         and x["question_num"] == qp["question_num"], ms_list), None)
+
+        return ms
+
+    @staticmethod
+    def select(qp_list: list, ms_list: list,
+               pdfname_regex: str = ".*",
                text_contains: list = None, text_excludes: list = None,
                num_limit: int = 10, is_random=True):
 
-        selected = []
+        selected_qp = []
+        selected_ms = []
 
         if is_random:
             random.shuffle(qp_list)
 
-        for question in qp_list:
+        for qp in qp_list:
 
-            if len(selected) >= num_limit:
+            if len(selected_qp) >= num_limit:
                 break
 
             if pdfname_regex is not None and \
-                    not re.match(pdfname_regex, question["pdfname"]):
+                    not re.match(pdfname_regex, qp["pdfname"]):
                 continue
 
             flag = True
@@ -255,42 +267,23 @@ class GeneratorFilter:
             if text_contains is not None:
                 flag = False
                 for text in text_contains:
-                    if text.lower() in question["text"].lower():
+                    if text.lower() in qp["text"].lower():
                         flag = True
                         break
 
             if text_excludes is not None:
                 for text in text_excludes:
-                    if text.lower() in question["text"].lower():
+                    if text.lower() in qp["text"].lower():
                         flag = False
                         break
 
-            if flag:
-                selected.append(question)
+            ms = GeneratorFilter.find_ms(qp, ms_list)
 
-        return selected
+            if flag and ms is not None:
+                selected_qp.append(qp)
+                selected_ms.append(ms)
 
-    @staticmethod
-    def generate_qp_ms_pairs(selected_qp_list, ms_list):
-        filter_qp_list = []
-        filter_ms_list = []
-
-        for qp in selected_qp_list:
-
-            splitted_ms_pdfname = qp["pdfname"].split("_")
-            splitted_ms_pdfname[2] = "ms"
-            ms_pdfname = "_".join(splitted_ms_pdfname)
-
-            ms = next(filter(lambda x: x["pdfname"] == ms_pdfname
-                             and x["question_num"] == qp["question_num"], ms_list), None)
-
-            if ms is None:
-                continue
-
-            filter_qp_list.append(qp)
-            filter_ms_list.append(ms)
-
-        return filter_qp_list, filter_ms_list
+        return selected_qp, selected_ms
 
 
 def main():
@@ -305,29 +298,41 @@ def main():
 
     # key list
 
-    lattice_energy = ["lattice energy",
-                      "entropy", "born-haber", "born haber", "enthalpy"]
-    equilibria = ["pH", "buffer solution", "conjugate acid",
-                  "weak acid", "partition coefficient", "solubility"]
-    reaction_kinetics = ["reaction rate",
-                         "rate of reaction", "rate equation", "first order", ""]
+    key_list = {
+        "lattice_energy": ["lattice energy",
+                           "entropy", "born-haber", "born haber", "enthalpy", "affinity",
+                           "solubility", "thermal stability", "hess"],
+        "equilibria": ["pH", "buffer solution", "conjugate acid",
+                       "weak acid", "partition coefficient", "solubility product", "pka", "kw"
+                       "ksp", "kpc"],
+        "reaction_kinetics": ["reaction rate",
+                              "rate of reaction", "rate equation", "first order", "half-life", "half life"
+                              "determining step", "limiting step", "homogeneous catalysis", "hetergeneous catalysis"],
+        "entropy_and_gibbs": ["free energy", "entropy", "gibbs", "feasib", "spontaneous"]
+    }
 
-    exclude = ["electro", "functional group", "alkane", "peak"]
+    exclude = ["electro", "functional group",
+               "alkane", "peak", "organic", "electric", "polymer",
+               "monomer", "amino", "ligand", "spectrum", "synthesis", "benzene"]
 
     # generate question
 
-    selected_qp_list = GeneratorFilter.filter(
-        qp_list, "9701_w17_qp_43", is_random=False)
+    for key in key_list:
 
-    filter_qp_list, filter_ms_list = GeneratorFilter.generate_qp_ms_pairs(
-        selected_qp_list, ms_list)
+        selected_qp_list, selected_ms_list = GeneratorFilter.select(
+            qp_list, ms_list, ".*qp_4.*",
+            text_contains=key_list[key], text_excludes=exclude, is_random=True)
 
-    generator = Generator("template/default.pdf")
-    generator.process(filter_qp_list, "qp.pdf", True)
-    generator.process(filter_ms_list, "ms.pdf", False)
+        if selected_qp_list is []:
+            continue
 
-    AnalyserModel.write_debugfile("generator_qp", filter_qp_list)
-    AnalyserModel.write_debugfile("generator_ms", filter_ms_list)
+        print(key, len(selected_qp_list), len(selected_qp_list))
+
+        generator = Generator("template/alpha_testing.pdf")
+        generator.process(selected_qp_list, DEBUG_DIR_PATH +
+                          "pdf/" + key + "_qp.pdf", True)
+        generator.process(selected_ms_list, DEBUG_DIR_PATH +
+                          "pdf/" + key + "_ms.pdf", False)
 
 
 if __name__ == "__main__":
