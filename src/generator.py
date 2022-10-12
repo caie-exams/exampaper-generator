@@ -267,13 +267,13 @@ class GeneratorFilter:
             if text_contains is not None:
                 flag = False
                 for text in text_contains:
-                    if text.lower() in qp["text"].lower():
+                    if text.lower().replace("-", " ") in qp["text"].lower():
                         flag = True
                         break
 
             if text_excludes is not None:
                 for text in text_excludes:
-                    if text.lower() in qp["text"].lower():
+                    if text.lower().replace("-", " ") in qp["text"].lower():
                         flag = False
                         break
 

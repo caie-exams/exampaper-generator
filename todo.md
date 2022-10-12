@@ -1,30 +1,19 @@
 # must dos
 
-- **Train tesseract data for mcq markscheme**
-- rewrite code to adapt config
-
 - write code for categoriser
 - add category keywords for testing
 
-# To read:
+# major todo
 
-- [Add text to pdf using report lab](https://stackoverflow.com/questions/1180115/add-text-to-existing-pdf-using-python)
-- [Embed PDF in PDF using report lab](https://gist.github.com/marsam/7327216)
-- [Watermark PDF with other PDF](https://github.com/pmaupin/pdfrw/blob/master/examples/fancy_watermark.py)
+- filter where a priority system is impleteted based on factors of
 
-- [Report Lab ](https://ithelp.ithome.com.tw/articles/10239020)
+  - number of included keywords
+  - number of excluded keywords
+  - publish date
 
-1. get coords of pdf
-2. use pypdf2 to crop (mediabox) of pdf, save to memory using stringIO
-3. use pdftext to convert cropped text to text
-4. use report lab to add question num
-5. use report lab to merge questions
-
-# future todos
-
-- fix the last mcq adds the bottom page info, by rewrite blank page detection function so it can detect any page specified in config
+- refactor the code
+- remove the dependency on dir structure by passing as args
 
 # minor improvements
 
-- and multiprocessing for full core utilization
 - add config logging and debugging mechanism

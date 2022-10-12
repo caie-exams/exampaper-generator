@@ -36,6 +36,172 @@
     }
   },
   "post_processor": {},
+  "categoriser": {
+    "chapter_keywords": {
+      ".*_qp_[12].*": {
+        "Atomic structure": [
+          "protons",
+          "neutrons",
+          "number of electrons",
+          "mass number",
+          "energy level",
+          "atomic number",
+          "nucleon",
+          "isotope"
+        ],
+        "Electrons in atoms": [
+          "electronic configuration",
+          "ionisation energy",
+          "sheilding",
+          "sub shell"
+        ],
+        "Atoms, molecules and stoichiometry": [],
+        "Chemical bonding": [],
+        "State of matter": [],
+        "Enthalpy changes": [],
+        "Redox reaction": [],
+        "Equilibria": [],
+        "Rates of reaction": [],
+        "Periodicity": [],
+        "Group 2": [],
+        "Group 17": [],
+        "Nitrogen": [],
+        "Introduction to organic chemistry": [],
+        "Hydrocarbons": [],
+        "Halogenoalkanes": [],
+        "Alcohols, esters and carboxylic acids": [],
+        "Carbonyl compounds": []
+      },
+      ".*_qp_4.*": {
+        "Lattice energy": [
+          "enthalpy change",
+          "lattice energy",
+          "electron affinity",
+          "born haber",
+          "energy cycle",
+          "ionic charge",
+          "ionic radius",
+          "thermal stability",
+          "solubility"
+        ],
+        "Electrochemistry": [
+          "electrolysis",
+          "electrolyte",
+          "electrode",
+          "faraday",
+          "cell potential",
+          "circuit",
+          "nernst"
+        ],
+        "Further aspects of equilibria": [
+          "conjugate",
+          "ph",
+          "pka",
+          "kw",
+          "buffer solution",
+          "ksp",
+          "solubility product",
+          "kpc",
+          "partition coefficient"
+        ],
+        "Reaction kinetics": [
+          "rate equation",
+          "order of reaction",
+          "rate constant",
+          "half life",
+          "rate determining",
+          "intermediate",
+          "concentration time",
+          "rate concentration",
+          "zero order",
+          "first order",
+          "second order",
+          "initial rate",
+          "catalysis",
+          "homogeneous",
+          "hetergeneous"
+        ],
+        "Entropy and Gibbs free energy": [
+          "entropy",
+          "gibbs",
+          "feasible",
+          "feasibility"
+        ],
+        "Transition elements": [
+          "transition element",
+          "coloured ion",
+          "electronic configuration",
+          "ligand",
+          "complex",
+          "stereoisomerism",
+          "optical isomerism",
+          "bidentate",
+          "kstab",
+          "stability constant",
+          "degenerate",
+          "absorption of light"
+        ],
+        "Benzene and its compounds": [
+          "benzene",
+          "aryl",
+          "friedel crafts",
+          "alkylation",
+          "acylation",
+          "benzoic",
+          "cyclohexane",
+          "phenol",
+          "naphthol"
+        ],
+        "Carboxylic acids and their derivatives": [
+          "carboxylic",
+          "methanoic acid",
+          "ethanedioic acid",
+          "acyl chloride",
+          "alkyl chloride",
+          "aryl chloride"
+        ],
+        "Organic nitrogen compounds": [
+          "amine",
+          "phenylamine",
+          "diazonium",
+          "azo",
+          "amide",
+          "amino",
+          "zwitterion"
+        ],
+        "Polymerisation": [
+          "polymerisation",
+          "polyester",
+          "polyamide",
+          "polyalkene",
+          "biodegradable"
+        ],
+        "Organic synthesis": [
+          "enantiometer",
+          "chiral",
+          "polarised light",
+          "optically active",
+          "racemic",
+          "synthesis",
+          "functional group"
+        ],
+        "Analytical chemistry": [
+          "rf value",
+          "chromatography",
+          "retention",
+          "percentage composition",
+          "carbon 13",
+          "NMR",
+          "splitting pattern",
+          "signal",
+          "TMS",
+          "tetramethylsilane",
+          "deuterate",
+          "D2O"
+        ]
+      }
+    }
+  },
   "controller": {
     "analyser_selection": {
       ".*_ms_1.*": "ms_mcq",
