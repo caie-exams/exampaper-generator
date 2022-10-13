@@ -14,17 +14,14 @@ class Generator:
 
     def __init__(self, background_filepath):
         self.background_filepath = background_filepath
+        # constants
+        self.PAGE_PADDING_PERCENT = 0.05
+        self.TEXT_HEIGHT = 10
 
     def process(self, question_list: list, output_filepath: str, display_qp_origin: bool):
         """
         input a list of questions, and output a pdf document
         """
-
-        workdir = TMP_DIR_PATH + Generator.generate_random_str(5) + "/"
-
-        # constants
-        PAGE_PADDING_PERCENT = 0.05
-        TEXT_HEIGHT = 10
 
         # gather background information
         background_template_file = PdfReader(self.background_filepath)
@@ -50,10 +47,10 @@ class Generator:
                 ewidth, eheight = Generator.get_pdf_shape(embed_page)
                 if display_qp_origin and idx == 0:
                     k = Generator.calculate_resize_factor(
-                        bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight + 2 * TEXT_HEIGHT)
+                        bwidth * (1-2*self.PAGE_PADDING_PERCENT), bheight * (1-2*self.PAGE_PADDING_PERCENT), ewidth, eheight + 2 * self.TEXT_HEIGHT)
                 else:
                     k = Generator.calculate_resize_factor(
-                        bwidth * (1-2*PAGE_PADDING_PERCENT), bheight * (1-2*PAGE_PADDING_PERCENT), ewidth, eheight)
+                        bwidth * (1-2*self.PAGE_PADDING_PERCENT), bheight * (1-2*self.PAGE_PADDING_PERCENT), ewidth, eheight)
                 embed_object.scale(k)
                 ewidth *= k
                 eheight *= k
@@ -70,7 +67,7 @@ class Generator:
 
         page_cnt = 0
         question_cnt = 0
-        fufilled_height = bheight * PAGE_PADDING_PERCENT
+        fufilled_height = bheight * self.PAGE_PADDING_PERCENT
 
         while len(embed_data_cache) > 0:
 
@@ -85,12 +82,12 @@ class Generator:
                 text = str(question_cnt + 1) + "."
 
             text_data = {"t": text, "x": bwidth *
-                         PAGE_PADDING_PERCENT, "y": bheight - fufilled_height, "page": page_cnt}
+                         self.PAGE_PADDING_PERCENT, "y": bheight - fufilled_height, "page": page_cnt}
 
             fufilled_height += embed_data["h"]
 
-            if fufilled_height >= bheight * (1 - PAGE_PADDING_PERCENT):
-                fufilled_height = bheight * PAGE_PADDING_PERCENT
+            if fufilled_height >= bheight * (1 - self.PAGE_PADDING_PERCENT):
+                fufilled_height = bheight * self.PAGE_PADDING_PERCENT
                 page_cnt += 1
                 continue
 
@@ -103,11 +100,11 @@ class Generator:
             embed_data["x"], embed_data["y"] = Generator.get_origin_coords(
                 embed_data["loc"], embed_data["w"], embed_data["h"])
 
-            embed_data["x"] += bwidth * (PAGE_PADDING_PERCENT)
+            embed_data["x"] += bwidth * self.PAGE_PADDING_PERCENT
             embed_data["y"] += bheight - fufilled_height
 
             if display_qp_origin and embed_data["idx"] == 0:
-                embed_data["y"] -= 2 * TEXT_HEIGHT
+                embed_data["y"] -= 2 * self.TEXT_HEIGHT
 
             if embed_data["idx"] == 0:
                 text_data_cache.append(text_data)
@@ -127,7 +124,7 @@ class Generator:
         # add page number and question text
         for idx, page in enumerate(page_list):
             Generator.put_text_on_pdf(
-                page, "# " + str(idx + 1), bwidth * (1-PAGE_PADDING_PERCENT) - 5, 10)
+                page, "# " + str(idx + 1), bwidth * (1-self.PAGE_PADDING_PERCENT) - 5, 10)
 
         for text_data in text_data_cache:
             pg, t, x, y = page_list[text_data["page"]
@@ -138,7 +135,7 @@ class Generator:
                 y -= 8
 
             Generator.put_text_on_pdf(pg, t, x, y,
-                                      lambda c: c.rect(x-2, y-2, len(t) * 6, TEXT_HEIGHT + 2, fill=False))
+                                      lambda c: c.rect(x-2, y-2, len(t) * 6, self.TEXT_HEIGHT + 2, fill=False))
 
         # write the pdf
         Generator.merge_pages_and_write_pdf(output_filepath, page_list)
@@ -229,19 +226,6 @@ class Generator:
 class GeneratorFilter:
 
     @staticmethod
-    def find_ms(qp, ms_list):
-
-        splitted_ms_pdfname = qp["pdfname"].split("_")
-        splitted_ms_pdfname[2] = "ms"
-
-        ms_pdfname = "_".join(splitted_ms_pdfname)
-
-        ms = next(filter(lambda x: x["pdfname"] == ms_pdfname
-                         and x["question_num"] == qp["question_num"], ms_list), None)
-
-        return ms
-
-    @staticmethod
     def select(qp_list: list, ms_list: list,
                pdfname_regex: str = ".*",
                text_contains: list = None, text_excludes: list = None,
@@ -299,21 +283,19 @@ def main():
     # key list
 
     key_list = {
-        "lattice_energy": ["lattice energy",
-                           "entropy", "born-haber", "born haber", "enthalpy", "affinity",
-                           "solubility", "thermal stability", "hess"],
-        "equilibria": ["pH", "buffer solution", "conjugate acid",
-                       "weak acid", "partition coefficient", "solubility product", "pka", "kw"
-                       "ksp", "kpc"],
-        "reaction_kinetics": ["reaction rate",
-                              "rate of reaction", "rate equation", "first order", "half-life", "half life"
-                              "determining step", "limiting step", "homogeneous catalysis", "hetergeneous catalysis"],
-        "entropy_and_gibbs": ["free energy", "entropy", "gibbs", "feasib", "spontaneous"]
+        "analytical_chemistry": ["rf value",
+                                 "chromatography",
+                                 "retention",
+                                 "percentage composition",
+                                 "carbon 13",
+                                 "NMR",
+                                 "splitting pattern",
+                                 "signal",
+                                 "TMS",
+                                 "tetramethylsilane",
+                                 "deuterate",
+                                 "D2O"],
     }
-
-    exclude = ["electro", "functional group",
-               "alkane", "peak", "organic", "electric", "polymer",
-               "monomer", "amino", "ligand", "spectrum", "synthesis", "benzene"]
 
     # generate question
 
@@ -321,7 +303,7 @@ def main():
 
         selected_qp_list, selected_ms_list = GeneratorFilter.select(
             qp_list, ms_list, ".*qp_4.*",
-            text_contains=key_list[key], text_excludes=exclude, is_random=True)
+            text_contains=key_list[key], is_random=True)
 
         if selected_qp_list is []:
             continue

@@ -36,6 +36,16 @@
     }
   },
   "post_processor": {},
+  "controller": {
+    "analyser_selection": {
+      ".*_ms_1.*": "ms_mcq",
+
+      ".*1[56]_ms_.*": "fixed_qn",
+
+      ".*_ms_[^1].*": "ms_grid",
+      ".*_qp_.*": "fixed_qn"
+    }
+  },
   "categoriser": {
     "chapter_keywords": {
       ".*_qp_[12].*": {
@@ -200,14 +210,6 @@
           "D2O"
         ]
       }
-    }
-  },
-  "controller": {
-    "analyser_selection": {
-      ".*_ms_1.*": "ms_mcq",
-      ".*1[56]_ms_.*": "fixed_qn",
-      ".*_ms_[^1].*": "ms_grid",
-      ".*_qp_.*": "fixed_qn"
     }
   }
 }
