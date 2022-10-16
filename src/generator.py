@@ -223,98 +223,15 @@ class Generator:
         output.write(output_filepath)
 
 
-class GeneratorFilter:
-
-    @staticmethod
-    def select(qp_list: list, ms_list: list,
-               pdfname_regex: str = ".*",
-               text_contains: list = None, text_excludes: list = None,
-               num_limit: int = 10, is_random=True):
-
-        selected_qp = []
-        selected_ms = []
-
-        if is_random:
-            random.shuffle(qp_list)
-
-        for qp in qp_list:
-
-            if len(selected_qp) >= num_limit:
-                break
-
-            if pdfname_regex is not None and \
-                    not re.match(pdfname_regex, qp["pdfname"]):
-                continue
-
-            flag = True
-
-            if text_contains is not None:
-                flag = False
-                for text in text_contains:
-                    if text.lower().replace("-", " ") in qp["text"].lower():
-                        flag = True
-                        break
-
-            if text_excludes is not None:
-                for text in text_excludes:
-                    if text.lower().replace("-", " ") in qp["text"].lower():
-                        flag = False
-                        break
-
-            ms = GeneratorFilter.find_ms(qp, ms_list)
-
-            if flag and ms is not None:
-                selected_qp.append(qp)
-                selected_ms.append(ms)
-
-        return selected_qp, selected_ms
-
-
 def main():
 
-    all_question_list = AnalyserModel.load_debugfile("controller_results")
+    qp_list = AnalyserModel.load_debugfile("categoriser_qp")
+    ms_list = AnalyserModel.load_debugfile("categoriser_ms")
 
-    qp_list = [
-        question for question in all_question_list if "qp" in question["pdfname"]]
+    generator = Generator("template/alpha_testing.pdf")
 
-    ms_list = [
-        question for question in all_question_list if "ms" in question["pdfname"]]
-
-    # key list
-
-    key_list = {
-        "analytical_chemistry": ["rf value",
-                                 "chromatography",
-                                 "retention",
-                                 "percentage composition",
-                                 "carbon 13",
-                                 "NMR",
-                                 "splitting pattern",
-                                 "signal",
-                                 "TMS",
-                                 "tetramethylsilane",
-                                 "deuterate",
-                                 "D2O"],
-    }
-
-    # generate question
-
-    for key in key_list:
-
-        selected_qp_list, selected_ms_list = GeneratorFilter.select(
-            qp_list, ms_list, ".*qp_4.*",
-            text_contains=key_list[key], is_random=True)
-
-        if selected_qp_list is []:
-            continue
-
-        print(key, len(selected_qp_list), len(selected_qp_list))
-
-        generator = Generator("template/alpha_testing.pdf")
-        generator.process(selected_qp_list, DEBUG_DIR_PATH +
-                          "pdf/" + key + "_qp.pdf", True)
-        generator.process(selected_ms_list, DEBUG_DIR_PATH +
-                          "pdf/" + key + "_ms.pdf", False)
+    generator.process(qp_list, DEBUG_DIR_PATH + "pdf/qp.pdf", True)
+    generator.process(ms_list, DEBUG_DIR_PATH + "pdf/ms.pdf", False)
 
 
 if __name__ == "__main__":

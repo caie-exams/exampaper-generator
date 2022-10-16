@@ -9,6 +9,13 @@ import multiprocessing
 import json
 
 
+"""
+controller scans pdf in directory, process 
+and returns a list of data of all qp and ms 
+in the directory
+"""
+
+
 def worker(pdfname):
     # load config
 
@@ -20,13 +27,10 @@ def worker(pdfname):
     if analyser_selection is None:
         raise Exception("can't specify analyser")
     elif analyser_selection == "fixed_qn":
-        print(pdfname, "fixed_qn ")
         analyser = AnalyserFixedQN()
     elif analyser_selection == "ms_mcq":
-        print(pdfname, "ms_mcq ")
         analyser = AnalyserMSMCQ()
     elif analyser_selection == "ms_grid":
-        print(pdfname, "ms_grid ")
         analyser = AnalyserMSGrid()
 
     post_processor = PostProcessor()
