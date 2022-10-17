@@ -62,11 +62,11 @@ class Categoriser:
 
             for category in qmc_pair["categories"]:
                 if category in include_chapters:
-                    include_cnt += qmc_pair["categories"][category]
+                    include_cnt += 1
                 if category in exclude_chapters:
                     exclude_cnt += 1
 
-            return include_cnt - exclude_cnt * 10
+            return include_cnt / len(include_chapters) * 100 - exclude_cnt * 1e5
 
         return sorted(qmc_pair_list, key=lambda x: rank(x), reverse=True)
 
@@ -160,18 +160,18 @@ def main():
     selected_qmc_pair_list = [
         qmc_pair for qmc_pair in qmc_pair_list if re.match(".*_qp_4.*", qmc_pair["qp"]["pdfname"])]
 
-    # include_list, exclude_list = GUIChapterSelection(
-    #     selected_qmc_pair_list[0]["qp"]["pdfname"])
-
-    include_list = ['Entropy and Gibbs free energy']
-    exclude_list = ['Electrochemistry', 'Benzene and its compounds', 'Carboxylic acids and their derivatives',
-                    'Organic nitrogen compounds', 'Polymerisation', 'Organic synthesis', 'Analytical chemistry']
+    include_list, exclude_list = GUIChapterSelection(
+        selected_qmc_pair_list[0]["qp"]["pdfname"])
 
     results = Categoriser.sort_by_relevance(
-        selected_qmc_pair_list, include_list, exclude_list)[:10]
+        selected_qmc_pair_list, include_list, exclude_list)
+
+    results = results[:10]
 
     qp_list = [result["qp"] for result in results]
     ms_list = [result["ms"] for result in results]
+
+    print(len(qp_list))
 
     AnalyserModel.write_debugfile("categoriser_qp", qp_list)
     AnalyserModel.write_debugfile("categoriser_ms", ms_list)
