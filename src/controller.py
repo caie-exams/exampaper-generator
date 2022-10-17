@@ -55,6 +55,7 @@ def main():
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
 
     PDFS_DIR = DATA_DIR_PATH + "pdf/"
+
     pdf_filename_list = [filename for filename in os.listdir(
         PDFS_DIR) if filename.endswith(".pdf")]
 
@@ -62,12 +63,12 @@ def main():
 
     for pdf_filename in pdf_filename_list:
 
-        if pdf_filename.split('_')[2] not in ["qp", "ms"]:
-            continue
-
         pdfname = pdf_filename.split(".")[0]
-        result = pool.apply_async(worker, args=(pdfname,))
-        done_data_async[pdfname] = result
+        is_included = next(AnalyserModel.get_config(
+            pdfname, "controller", "is_included"), None)
+        if is_included is not None and is_included:
+            result = pool.apply_async(worker, args=(pdfname,))
+            done_data_async[pdfname] = result
 
     done_data = []
     error_list = {}

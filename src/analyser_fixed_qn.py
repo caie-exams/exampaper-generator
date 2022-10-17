@@ -76,7 +76,7 @@ class AnalyserFixedQN(AnalyserModel):
 # main is used for debug
 def main():
 
-    pdfname = "9608_s15_ms_11"
+    pdfname = "9231_s17_qp_12"
     # 34
 
     analyser = AnalyserFixedQN()

@@ -39,11 +39,15 @@
   "controller": {
     "analyser_selection": {
       ".*_ms_1.*": "ms_mcq",
-
       ".*1[56]_ms_.*": "fixed_qn",
-
       ".*_ms_[^1].*": "ms_grid",
       ".*_qp_.*": "fixed_qn"
+    },
+    "is_included": {
+      ".*(0[0-9]|1[0-4])_(qp|ms)_.*": false,
+      ".*_qp_.*": true,
+      ".*_ms_.*": true,
+      ".*": false
     }
   },
   "categoriser": {

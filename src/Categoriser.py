@@ -50,7 +50,8 @@ class Categoriser:
         return qmc_pair
 
     @staticmethod
-    def sort_by_relevance(qmc_pair_list: list, include_chapters: list, exclude_chapters: list):
+    def sort_by_relevance(qmc_pair_list: list, include_chapters: list, exclude_chapters: list,
+                          include_keywords: list = [],  exclude_keywords: list = []):
         """
         the priority of include chapters will be high,
         the exclude chapters will be lowest
@@ -58,15 +59,30 @@ class Categoriser:
 
         def rank(qmc_pair):
 
-            include_cnt = exclude_cnt = 0
+            include_chp_cnt = exclude_chp_cnt = 0
+            include_kw_cnt = exclude_kw_cnt = 0
 
             for category in qmc_pair["categories"]:
                 if category in include_chapters:
-                    include_cnt += 1
+                    include_chp_cnt += 1
                 if category in exclude_chapters:
-                    exclude_cnt += 1
+                    exclude_chp_cnt += 1
 
-            return include_cnt / len(include_chapters) * 100 - exclude_cnt * 1e5
+            for keyword in include_keywords:
+                if keyword in qmc_pair["qp"]["text"]:
+                    include_kw_cnt += 1
+
+            for keyword in exclude_keywords:
+                if keyword in qmc_pair["qp"]["text"]:
+                    exclude_kw_cnt += 1
+
+            rank = include_chp_cnt / \
+                len(include_chapters) * 100 - exclude_chp_cnt * 1e5
+            if include_keywords != []:
+                rank += include_kw_cnt / len(include_keywords) * 100
+            rank -= exclude_kw_cnt * 1e5
+
+            return rank
 
         return sorted(qmc_pair_list, key=lambda x: rank(x), reverse=True)
 
@@ -113,7 +129,7 @@ def GUIChapterSelection(pdfname):
         pdfname, "categoriser", "chapter_keywords"), None)
 
     if chapter_keywords is None:
-        raise Exception("can't find any chapter keywords")
+        raise Exception(pdfname + " can't find any chapter keywords")
 
     chapter_list = [key for key in chapter_keywords]
 
@@ -150,21 +166,23 @@ def GUIChapterSelection(pdfname):
 
 def main():
 
-    # categoriser = Categoriser()
-    # controller_results = AnalyserModel.load_debugfile("controller_results")
-    # results = categoriser.process(controller_results)
-    # AnalyserModel.write_debugfile("categoriser_debug", results)
+    exclude_keywords = ["eigen"]
 
-    qmc_pair_list = AnalyserModel.load_debugfile("categoriser_debug")
+    controller_results = AnalyserModel.load_debugfile("controller_results")
+    controller_results = list(Filter.pdfname_matching(
+        ".*_(qp|ms)_1.*", controller_results))
 
-    selected_qmc_pair_list = [
-        qmc_pair for qmc_pair in qmc_pair_list if re.match(".*_qp_4.*", qmc_pair["qp"]["pdfname"])]
+    qmc_pair_list = Categoriser.process(controller_results)
 
-    include_list, exclude_list = GUIChapterSelection(
-        selected_qmc_pair_list[0]["qp"]["pdfname"])
+    # include_list, exclude_list = GUIChapterSelection(
+    #     qmc_pair_list[0]["qp"]["pdfname"])
+
+    include_list = ['Vectors']
+    exclude_list = ['Series and induction', 'Roots of polynomials',
+                    'Rational functions and graphs', 'Polar coordinates']
 
     results = Categoriser.sort_by_relevance(
-        selected_qmc_pair_list, include_list, exclude_list)
+        qmc_pair_list, include_list, exclude_list, exclude_keywords=exclude_keywords)
 
     results = results[:10]
 

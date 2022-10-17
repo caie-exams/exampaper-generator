@@ -1,0 +1,94 @@
+{
+  "meta_info": {
+    "subject_name": "further mathematics"
+  },
+  "analyser": {
+    "page_bound": {
+      ".*": [175, 1550, 150, 2220]
+    },
+    "grid_header": {
+      ".*_ms_.*": "Question Answer Marks"
+    },
+    "question_padding": {
+      ".*1[56]_ms_.*": [50, 5, 0, 10],
+      ".*_qp_.*": [50, 5, 10, 10],
+      ".*_ms_.*": [0, 0, 0, 10]
+    },
+    "unwanted_content": {
+      ".*_ms_[^1].*": [["Answer Marks", "BOX"]],
+      ".*_qp_[^1].*": [
+        ["BLANK PAGE", "ALL"],
+        ["Question * begins on the next page.", "ALL"]
+      ]
+    }
+  },
+  "post_processor": {},
+  "controller": {
+    "analyser_selection": {
+      ".*_qp_.*": "fixed_qn",
+      ".*_ms_.*": "ms_grid"
+    },
+    "is_included": {
+      ".*(0[0-9]|1[0-5])_(qp|ms)_.*": false,
+      ".*_qp_.*": true,
+      ".*_ms_.*": true,
+      ".*": false
+    }
+  },
+  "categoriser": {
+    "chapter_keywords": {
+      ".*_qp_1.*": {
+        "Matrices and transformations": [
+          "rotation",
+          "shear",
+          "transformation",
+          "invariant point",
+          "invariant line"
+        ],
+        "Series and induction": [
+          "series",
+          "sequence",
+          "induction",
+          "method of difference",
+          "sum to infinity"
+        ],
+        "Roots of polynomials": [
+          "polynomial",
+          "quadratic",
+          "cubic",
+          "quartic",
+          "quintic",
+          "roots of equation",
+          "coefficient"
+        ],
+        "Rational functions and graphs": [
+          "rational function",
+          "asymptote",
+          "oblique",
+          "discriminant",
+          "inequality"
+        ],
+        "Polar coordinates": [
+          "cartesian",
+          "polar",
+          "area of sector",
+          "spiral",
+          "cardioid",
+          "rhodonea",
+          "initial line",
+          "area enclosed",
+          "lemniscate"
+        ],
+        "Matrices and their inverses": [
+          "det",
+          "minor",
+          "cofactor",
+          "inverse",
+          "adj",
+          "singular"
+        ],
+        "Vectors": ["vector", "plane", "skew"]
+      }
+    }
+  }
+}

@@ -44,8 +44,12 @@ class AnalyserModel:
 
     @staticmethod
     def get_config(pdfname, module, config_name):
-        module_config = AnalyserModel._load_config(
-            pdfname.split("_")[0])[module]
+        try:
+            module_config = AnalyserModel._load_config(
+                pdfname.split("_")[0])[module]
+        except KeyError:
+            return None
+
         config_entry = None
         for pdfname_regex in module_config[config_name]:
             if re.match(pdfname_regex, pdfname) is not None:
