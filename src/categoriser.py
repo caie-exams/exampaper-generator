@@ -1,5 +1,6 @@
 from model.analyser_model import AnalyserModel
 from filter import Filter
+from collections import OrderedDict
 import re
 
 
@@ -84,7 +85,9 @@ class Categoriser:
 
             return rank
 
-        return sorted(qmc_pair_list, key=lambda x: rank(x), reverse=True)
+        sorted_list = sorted(
+            qmc_pair_list, key=lambda x: rank(x), reverse=True)
+        return sorted_list
 
     @staticmethod
     def find_ms_for_qp(qp, ms_list):
@@ -166,7 +169,8 @@ def GUIChapterSelection(pdfname):
 
 def main():
 
-    exclude_keywords = ["eigen"]
+    exclude_keywords = []
+    question_cnt = 23
 
     controller_results = AnalyserModel.load_debugfile("controller_results")
     controller_results = list(Filter.pdfname_matching(
@@ -181,15 +185,48 @@ def main():
     include_list, exclude_list = GUIChapterSelection(
         qmc_pair_list[0]["qp"]["pdfname"])
 
-    results = Categoriser.sort_by_relevance(
-        qmc_pair_list, include_list, exclude_list)
+    # include_list = [
+    #     'Circular motion & Gravitational fields', 'Oscillations', 'Thermal physics', 'Ideal gases']
+    # exclude_list = ["Uniform electric fields & Coulomb's law", 'Capacitance',
+    #                 'Magnetic fields and electromagnetism & Electromagnetic induction', 'Motion of charged particles', 'Alternating currents', 'Quantum physics', 'Nuclear physics', 'Medical imaging', 'Astronomy and cosmology']
 
-    results = results[:20]
+    results_by_chapter = {}
+    for chapter in include_list:
+        results = Categoriser.sort_by_relevance(
+            qmc_pair_list, [chapter], exclude_list)
+        results_by_chapter[chapter] = results
 
-    qp_list = [result["qp"] for result in results]
-    ms_list = [result["ms"] for result in results]
+    # equalize
+    # TODO: solve the problem where >30 questions leads to incorrect results
+    # TODO: make this a module
 
-    print(len(qp_list))
+    final_results = []
+    qp_under_chapter_cnt = {x: 0 for x in include_list}
+
+    while len(final_results) <= question_cnt:
+        qp_under_chapter_cnt = OrderedDict(
+            sorted(qp_under_chapter_cnt.items(), key=lambda x: x[1]))
+        next_chapter = next(iter(qp_under_chapter_cnt))
+
+        # get rid of repeats
+        topical_question = results_by_chapter[next_chapter].pop(0)
+        while topical_question in final_results:
+            topical_question = results_by_chapter[next_chapter].pop(0)
+
+        final_results.append(topical_question)
+
+        # add cnt
+        for chapter in topical_question["categories"]:
+            if chapter in qp_under_chapter_cnt.keys():
+                qp_under_chapter_cnt[chapter] += 1
+
+    # output the results
+    for x in qp_under_chapter_cnt:
+        print(x, qp_under_chapter_cnt[x])
+    # print("\n".join([str(x["categories"]) for x in final_results]))
+
+    qp_list = [result["qp"] for result in final_results]
+    ms_list = [result["ms"] for result in final_results]
 
     AnalyserModel.write_debugfile("categoriser_qp", qp_list)
     AnalyserModel.write_debugfile("categoriser_ms", ms_list)

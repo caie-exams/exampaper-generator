@@ -66,7 +66,8 @@
           "shm",
           "oscillat",
           "damp",
-          "resonance"
+          "resonance",
+          "trolley"
         ],
         "Thermal physics": [
           "internal energy",
