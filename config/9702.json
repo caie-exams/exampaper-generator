@@ -1,0 +1,199 @@
+{
+  "meta_info": {
+    "subject_name": "chemistry"
+  },
+  "analyser": {
+    "page_bound": {
+      ".*": [175, 1550, 150, 2220]
+    },
+    "grid_header": {
+      ".*_ms_.*": "Question Answer Marks"
+    },
+    "question_padding": {
+      ".*1[56]_ms_.*": [50, 5, 0, 10],
+      ".*_qp_.*": [50, 5, 10, 10],
+      ".*_ms_.*": [0, 0, 0, 10]
+    },
+    "unwanted_content": {
+      ".*_ms_[^1].*": [["Answer Marks", "BOX"]],
+      ".*_qp_[^1].*": [
+        ["BLANK PAGE", "ALL"],
+        ["Question * begins on the next page.", "ALL"]
+      ]
+    }
+  },
+  "post_processor": {},
+  "controller": {
+    "analyser_selection": {
+      ".*_ms_1.*": "ms_mcq",
+      ".*1[56]_ms_.*": "fixed_qn",
+      ".*_ms_[^1].*": "ms_grid",
+      ".*_qp_.*": "fixed_qn"
+    },
+    "is_included": {
+      ".*(0[0-9]|1[0-4])_(qp|ms)_.*": false,
+      ".*_qp_.*": true,
+      ".*_ms_.*": true,
+      ".*": false
+    }
+  },
+  "categoriser": {
+    "chapter_keywords": {
+      ".*_qp_4.*": {
+        "Circular motion & Gravitational fields": [
+          "radian",
+          "circular",
+          "angular",
+          "centripetal",
+          "revolution",
+          "tension",
+          "rotate",
+          "ωr",
+          "orbital",
+          "gravity",
+          "gravitational",
+          "product of masses",
+          "free fall",
+          "satellite",
+          "geostationary"
+        ],
+        "Oscillations": [
+          "pendulum",
+          "natural frequency",
+          "phase difference",
+          "simple harmonic",
+          "s.h.m",
+          "shm",
+          "oscillat",
+          "damp",
+          "resonance"
+        ],
+        "Thermal physics": [
+          "internal energy",
+          "latent heat",
+          "thermal",
+          "thermo",
+          "s.h.c",
+          "shc",
+          "specific heat capacity",
+          "absolute zero"
+        ],
+        "Ideal gases": [
+          "ideal gas",
+          "piston",
+          "gas molecule",
+          "translational kinetic energy",
+          "boltzmann constant",
+          "boyel",
+          "square speed",
+          "molar",
+          "moles"
+        ],
+
+        "Uniform electric fields & Coulomb's law": [
+          "electric field",
+          "uniform field",
+          "electric charge",
+          "point charge",
+          "coulomb",
+          "radial field",
+          "electric potential",
+          "carrying a charge"
+        ],
+        "Capacitance": [
+          "capacitor",
+          "capacitance",
+          "farad",
+          "discharge current"
+        ],
+        "Magnetic fields and electromagnetism & Electromagnetic induction": [
+          "magnetic field",
+          "electromagne",
+          "solenoid",
+          "magnetic flux",
+          "faraday",
+          "lenz",
+          "electromagne",
+          "induced",
+          "magnetic force"
+        ],
+        "Motion of charged particles": [
+          "charged particle",
+          "uniform magnetic field",
+          "bev",
+          "velocity selector",
+          "hall effect",
+          "hall voltage",
+          "charge carrier",
+          "hall probe",
+          "beam of electrons",
+          "electron beam",
+          "deflect",
+          "path of a electron",
+          "path of a proton"
+        ],
+        "Alternating currents": [
+          "alternating current",
+          "root mean square",
+          "r.m.s",
+          "rms",
+          "sinusoidal",
+          "rectif"
+        ],
+        "Quantum physics": [
+          "photon",
+          "photoelectric",
+          "threshold wavelength",
+          "electromagnetic radiation",
+          "electron diffraction",
+          "broglie",
+          "wave particle duality",
+          "line spectra",
+          "spectral line",
+          "spectrum",
+          "quantis",
+          "quantum",
+          "energy level"
+        ],
+        "Nuclear physics": [
+          "nuclear",
+          "mass energy",
+          "mass defect",
+          "binding energy",
+          "nucleon",
+          "nuclide",
+          "nuclei",
+          "nuclear fusion",
+          "fission",
+          "half life",
+          "decay",
+          "activity"
+        ],
+        "Medical imaging": [
+          "x ray",
+          "image intensifier",
+          "ultrasound",
+          "piezo electric",
+          "transducer",
+          "impedance",
+          "radioactive tracer",
+          "tumour",
+          "pet scan",
+          "annihilate"
+        ],
+        "Astronomy and cosmology": [
+          "lumin",
+          "standard candle",
+          "astronom",
+          "radiant flux intensity",
+          "wien",
+          "stefan",
+          "hubble",
+          "redshift",
+          "big bang",
+          "galaxy"
+        ]
+      }
+    }
+  }
+}
