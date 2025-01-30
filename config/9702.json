@@ -154,7 +154,8 @@
           "spectrum",
           "quantis",
           "quantum",
-          "energy level"
+          "energy level",
+          "gold foil"
         ],
         "Nuclear physics": [
           "nuclear",
@@ -172,6 +173,8 @@
         ],
         "Medical imaging": [
           "x ray",
+          "\u03b1 ray",
+          "CT",
           "image intensifier",
           "ultrasound",
           "piezo electric",
@@ -193,6 +196,15 @@
           "redshift",
           "big bang",
           "galaxy"
+        ],
+        "Obsolete Chapters": [
+          "ADC",
+          "digital signal",
+          "optic fibre",
+          "noise power",
+          "amplifier",
+          "relay",
+          "coaxial"
         ]
       }
     }

@@ -4,6 +4,9 @@
 
 # Paper Generator
 
+**Status of development:**  
+The development of this project has been temperatorily paused, but fear not, after some time I will complete this project and bring this to its ultimate form.
+
 > What is this?
 
 A piece of program that splits question and answers from the PDF provided by CAIE,  
@@ -39,3 +42,17 @@ But you can easily create rules for your favourite subject and submit your confi
 > How can I use it?
 
 It's still in development, so relex, and wait for it.
+
+## Quick Start
+
+```bash
+python3 -m venv .venv
+pip3 install -r requirements.txt
+
+mkdir -p data/pdf
+# place your pdf files in pdf folder
+
+python3 src/controller.py
+python3 src/categoriser.py
+python src/generator.py
+```
